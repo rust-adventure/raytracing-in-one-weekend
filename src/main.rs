@@ -1,3 +1,4 @@
+use glam::DVec3;
 use indicatif::ProgressIterator;
 use itertools::Itertools;
 use std::{fs, io};
