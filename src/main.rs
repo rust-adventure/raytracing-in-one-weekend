@@ -1,8 +1,8 @@
 use itertools::Itertools;
 use std::{fs, io};
 
-const IMAGE_HEIGHT: u32 = 2;
-const IMAGE_WIDTH: u32 = 3;
+const IMAGE_HEIGHT: u32 = 256;
+const IMAGE_WIDTH: u32 = 256;
 const MAX_VALUE: u8 = 255;
 
 fn main() -> io::Result<()> {
@@ -19,11 +19,7 @@ fn main() -> io::Result<()> {
                 b * 255.0
             )
         })
-        .chunks(IMAGE_WIDTH as usize)
-        .into_iter()
-        .map(|chunk| chunk.into_iter().join(" "))
         .join("\n");
-    println!("{}", pixels);
     fs::write(
         "output.ppm",
         format!(
