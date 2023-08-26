@@ -37,3 +37,14 @@ fn main() -> io::Result<()> {
     )?;
     Ok(())
 }
+
+struct Ray {
+    origin: DVec3,
+    direction: DVec3,
+}
+
+impl Ray {
+    fn at(&self, t: f64) -> DVec3 {
+        self.origin + t * self.direction
+    }
+}
