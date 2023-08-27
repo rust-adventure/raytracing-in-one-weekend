@@ -1,6 +1,7 @@
 use glam::DVec3;
 use indicatif::ProgressIterator;
 use itertools::Itertools;
+use rand::prelude::*;
 use std::{fs, io, ops::Range};
 
 fn main() -> io::Result<()> {
@@ -31,6 +32,7 @@ struct Camera {
     pixel_delta_v: DVec3,
     // viewport_upper_left: DVec3,
     pixel00_loc: DVec3,
+    samples_per_pixel: u32,
 }
 impl Camera {
     fn new(image_width: u32, aspect_ratio: f64) -> Self {
@@ -73,7 +75,34 @@ impl Camera {
             pixel_delta_v,
             // viewport_upper_left,
             pixel00_loc,
+            samples_per_pixel: 100,
         }
+    }
+    fn get_ray(&self, i: i32, j: i32) -> Ray {
+        // Get a randomly sampled camera ray for the pixel at location i,j.
+
+        let pixel_center = self.pixel00_loc
+            + (i as f64 * self.pixel_delta_u)
+            + (j as f64 * self.pixel_delta_v);
+        let pixel_sample =
+            pixel_center + self.pixel_sample_square();
+
+        let ray_origin = self.center;
+        let ray_direction = pixel_sample - ray_origin;
+
+        Ray {
+            origin: self.center,
+            direction: ray_direction,
+        }
+    }
+
+    fn pixel_sample_square(&self) -> DVec3 {
+        let mut rng = rand::thread_rng();
+        // Returns a random point in the square surrounding a pixel at the origin.
+        let px = -0.5 + rng.gen::<f64>();
+        let py = -0.5 + rng.gen::<f64>();
+        (px * self.pixel_delta_u)
+            + (py * self.pixel_delta_v)
     }
     fn render_to_disk<T>(&self, world: T) -> io::Result<()>
     where
@@ -86,23 +115,25 @@ impl Camera {
                     * self.image_width as u64,
             )
             .map(|(y, x)| {
-                let pixel_center = self.pixel00_loc
-                    + (x as f64 * self.pixel_delta_u)
-                    + (y as f64 * self.pixel_delta_v);
-                let ray_direction =
-                    pixel_center - self.center;
-                let ray = Ray {
-                    origin: self.center,
-                    direction: ray_direction,
-                };
+                let scale_factor =
+                    (self.samples_per_pixel as f64).recip();
 
-                let pixel_color = ray.color(&world) * 255.0;
+                let multisampled_pixel_color = (0..self
+                    .samples_per_pixel)
+                    .into_iter()
+                    .map(|_| {
+                        self.get_ray(x as i32, y as i32)
+                            .color(&world)
+                            * 255.0
+                            * scale_factor
+                    })
+                    .sum::<DVec3>();
 
                 format!(
                     "{} {} {}",
-                    pixel_color.x,
-                    pixel_color.y,
-                    pixel_color.z
+                    multisampled_pixel_color.x,
+                    multisampled_pixel_color.y,
+                    multisampled_pixel_color.z
                 )
             })
             .join("\n");
@@ -154,9 +185,6 @@ trait Hittable {
         &self,
         ray: &Ray,
         interval: Range<f64>,
-        // ray_tmin: f64,
-        // ray_tmax: f64,
-        // record: HitRecord,
     ) -> Option<HitRecord>;
 }
 
@@ -236,9 +264,6 @@ impl Hittable for Sphere {
         &self,
         ray: &Ray,
         interval: Range<f64>,
-        // ray_tmin: f64,
-        // ray_tmax: f64,
-        // record: HitRecord,
     ) -> Option<HitRecord> {
         let oc = ray.origin - self.center;
         let a = ray.direction.length_squared();
@@ -299,8 +324,6 @@ impl Hittable for HittableList {
         &self,
         ray: &Ray,
         interval: Range<f64>,
-        // ray_tmin: f64,
-        // ray_tmax: f64,
     ) -> Option<HitRecord> {
         let (_closest, hit_record) = self
             .objects
