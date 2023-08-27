@@ -1,7 +1,7 @@
 use glam::DVec3;
 use indicatif::ProgressIterator;
 use itertools::Itertools;
-use std::{fs, io};
+use std::{fs, io, ops::Range};
 
 const IMAGE_WIDTH: u32 = 400;
 const MAX_VALUE: u8 = 255;
@@ -21,6 +21,17 @@ const VIEWPORT_V: DVec3 =
     DVec3::new(0., -VIEWPORT_HEIGHT, 0.);
 
 fn main() -> io::Result<()> {
+    let mut world = HittableList { objects: vec![] };
+
+    world.add(Sphere {
+        center: DVec3::new(0.0, 0.0, -1.0),
+        radius: 0.5,
+    });
+    world.add(Sphere {
+        center: DVec3::new(0., -100.5, -1.),
+        radius: 100.,
+    });
+
     // Calculate the horizontal and vertical delta vectors from pixel to pixel.
     let pixel_delta_u: DVec3 =
         VIEWPORT_U / IMAGE_WIDTH as f64;
@@ -51,7 +62,7 @@ fn main() -> io::Result<()> {
                 direction: ray_direction,
             };
 
-            let pixel_color = ray.color() * 255.0;
+            let pixel_color = ray.color(&world) * 255.0;
 
             format!(
                 "{} {} {}",
@@ -81,14 +92,16 @@ impl Ray {
     fn at(&self, t: f64) -> DVec3 {
         self.origin + t * self.direction
     }
-    fn color(&self) -> DVec3 {
-        let t =
-            hit_sphere(&DVec3::new(0., 0., -1.), 0.5, self);
-        if t > 0.0 {
-            let N = (self.at(t) - DVec3::new(0., 0., -1.))
-                .normalize();
-            return 0.5 * (N + 1.0);
-        };
+    fn color<T>(&self, world: &T) -> DVec3
+    where
+        T: Hittable,
+    {
+        if let Some(rec) =
+            world.hit(&self, (0.)..f64::INFINITY)
+        {
+            return 0.5
+                * (rec.normal + DVec3::new(1., 1., 1.));
+        }
 
         let unit_direction: DVec3 =
             self.direction.normalize();
@@ -98,20 +111,192 @@ impl Ray {
     }
 }
 
-fn hit_sphere(
-    center: &DVec3,
-    radius: f64,
-    ray: &Ray,
-) -> f64 {
-    let oc: DVec3 = ray.origin - *center;
-    let a = ray.direction.length_squared();
-    let half_b = oc.dot(ray.direction);
-    let c = oc.length_squared() - radius * radius;
-    let discriminant = half_b * half_b - a * c;
+// fn hit_sphere(
+//     center: &DVec3,
+//     radius: f64,
+//     ray: &Ray,
+// ) -> f64 {
+//     let oc: DVec3 = ray.origin - *center;
+//     let a = ray.direction.length_squared();
+//     let half_b = oc.dot(ray.direction);
+//     let c = oc.length_squared() - radius * radius;
+//     let discriminant = half_b * half_b - a * c;
 
-    if discriminant < 0. {
-        -1.0
-    } else {
-        (-half_b - discriminant.sqrt()) / a
+//     if discriminant < 0. {
+//         -1.0
+//     } else {
+//         (-half_b - discriminant.sqrt()) / a
+//     }
+// }
+
+trait Hittable {
+    fn hit(
+        &self,
+        ray: &Ray,
+        interval: Range<f64>,
+        // ray_tmin: f64,
+        // ray_tmax: f64,
+        // record: HitRecord,
+    ) -> Option<HitRecord>;
+}
+
+struct HitRecord {
+    point: DVec3,
+    normal: DVec3,
+    t: f64,
+    front_face: bool,
+}
+impl HitRecord {
+    fn with_face_normal(
+        point: DVec3,
+        outward_normal: DVec3,
+        t: f64,
+        ray: &Ray,
+    ) -> Self {
+        let (front_face, normal) =
+            HitRecord::calc_face_normal(
+                ray,
+                &outward_normal,
+            );
+        HitRecord {
+            point,
+            normal,
+            t,
+            front_face,
+        }
+    }
+    fn calc_face_normal(
+        ray: &Ray,
+        outward_normal: &DVec3,
+    ) -> (bool, DVec3) {
+        // TODO: Why is outward_normal.is_normalized() false
+        // for some normals for which these two values are exactly the same:
+        // dbg!(
+        //     outward_normal,
+        //     outward_normal.normalize()
+        // );
+        // debug_assert!(
+        //     !outward_normal.is_normalized(),
+        //     "outward_normal must be normalized"
+        // );
+
+        let front_face =
+            ray.direction.dot(*outward_normal) < 0.;
+        let normal = if front_face {
+            *outward_normal
+        } else {
+            -*outward_normal
+        };
+        (front_face, normal)
+    }
+    // Unused
+    fn set_face_normal(
+        &mut self,
+        ray: &Ray,
+        outward_normal: &DVec3,
+    ) {
+        let (front_face, normal) =
+            HitRecord::calc_face_normal(
+                ray,
+                outward_normal,
+            );
+
+        self.front_face = front_face;
+        self.normal = normal;
+    }
+}
+
+struct Sphere {
+    center: DVec3,
+    radius: f64,
+}
+
+impl Hittable for Sphere {
+    fn hit(
+        &self,
+        ray: &Ray,
+        interval: Range<f64>,
+        // ray_tmin: f64,
+        // ray_tmax: f64,
+        // record: HitRecord,
+    ) -> Option<HitRecord> {
+        let oc = ray.origin - self.center;
+        let a = ray.direction.length_squared();
+        let half_b = oc.dot(ray.direction);
+        let c =
+            oc.length_squared() - self.radius * self.radius;
+
+        let discriminant = half_b * half_b - a * c;
+        if discriminant < 0. {
+            return None;
+        }
+        let sqrtd = discriminant.sqrt();
+
+        // Find the nearest root that lies in the acceptable range.
+        let mut root = (-half_b - sqrtd) / a;
+        if !interval.contains(&root) {
+            root = (-half_b + sqrtd) / a;
+            if !interval.contains(&root) {
+                return None;
+            }
+        }
+
+        let t = root;
+        let point = ray.at(t);
+        let outward_normal =
+            (point - self.center) / self.radius;
+
+        let rec = HitRecord::with_face_normal(
+            point,
+            outward_normal,
+            t,
+            ray,
+        );
+
+        Some(rec)
+    }
+}
+
+struct HittableList {
+    objects: Vec<Box<dyn Hittable>>,
+}
+impl HittableList {
+    fn clear(&mut self) {
+        self.objects = vec![]
+    }
+
+    fn add<T>(&mut self, object: T)
+    where
+        T: Hittable + 'static,
+    {
+        // was push_back
+        self.objects.push(Box::new(object));
+    }
+}
+
+impl Hittable for HittableList {
+    fn hit(
+        &self,
+        ray: &Ray,
+        interval: Range<f64>,
+        // ray_tmin: f64,
+        // ray_tmax: f64,
+    ) -> Option<HitRecord> {
+        let (_closest, hit_record) = self
+            .objects
+            .iter()
+            .fold((interval.end, None), |acc, item| {
+                if let Some(temp_rec) = item.hit(
+                    ray,
+                    interval.start..acc.0,
+                    // acc.0,
+                ) {
+                    (temp_rec.t, Some(temp_rec))
+                } else {
+                    acc
+                }
+            });
+
+        hit_record
     }
 }
