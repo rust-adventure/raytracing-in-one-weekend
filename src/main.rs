@@ -124,13 +124,19 @@ impl Camera {
                     .samples_per_pixel)
                     .into_iter()
                     .map(|_| {
-                        self.get_ray(x as i32, y as i32)
+                        let color = self
+                            .get_ray(x as i32, y as i32)
                             .color(
                                 self.max_depth as i32,
                                 &world,
                             )
                             * 255.0
-                            * scale_factor
+                            * scale_factor;
+                        DVec3 {
+                            x: linear_to_gamma(color.x),
+                            y: linear_to_gamma(color.y),
+                            z: linear_to_gamma(color.z),
+                        }
                     })
                     .sum::<DVec3>();
 
@@ -157,6 +163,11 @@ impl Camera {
         )
     }
 }
+
+fn linear_to_gamma(scalar: f64) -> f64 {
+    scalar.sqrt()
+}
+
 struct Ray {
     origin: DVec3,
     direction: DVec3,
@@ -177,7 +188,7 @@ impl Ray {
             world.hit(&self, (0.001)..f64::INFINITY)
         {
             let direction: DVec3 =
-                random_on_hemisphere(&rec.normal);
+                rec.normal + random_unit_vector();
             let ray = Ray {
                 origin: rec.point,
                 direction,
