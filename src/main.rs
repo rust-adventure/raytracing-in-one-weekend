@@ -1,7 +1,7 @@
 use glam::DVec3;
 use indicatif::ProgressIterator;
 use itertools::Itertools;
-use rand::prelude::*;
+use rand::{distributions::Uniform, prelude::*};
 use std::{fs, io, ops::Range};
 
 fn main() -> io::Result<()> {
@@ -33,6 +33,7 @@ struct Camera {
     // viewport_upper_left: DVec3,
     pixel00_loc: DVec3,
     samples_per_pixel: u32,
+    max_depth: u32,
 }
 impl Camera {
     fn new(image_width: u32, aspect_ratio: f64) -> Self {
@@ -76,6 +77,7 @@ impl Camera {
             // viewport_upper_left,
             pixel00_loc,
             samples_per_pixel: 100,
+            max_depth: 50,
         }
     }
     fn get_ray(&self, i: i32, j: i32) -> Ray {
@@ -123,7 +125,10 @@ impl Camera {
                     .into_iter()
                     .map(|_| {
                         self.get_ray(x as i32, y as i32)
-                            .color(&world)
+                            .color(
+                                self.max_depth as i32,
+                                &world,
+                            )
                             * 255.0
                             * scale_factor
                     })
@@ -161,15 +166,23 @@ impl Ray {
     fn at(&self, t: f64) -> DVec3 {
         self.origin + t * self.direction
     }
-    fn color<T>(&self, world: &T) -> DVec3
+    fn color<T>(&self, depth: i32, world: &T) -> DVec3
     where
         T: Hittable,
     {
+        if depth <= 0 {
+            return DVec3::new(0., 0., 0.);
+        }
         if let Some(rec) =
-            world.hit(&self, (0.)..f64::INFINITY)
+            world.hit(&self, (0.001)..f64::INFINITY)
         {
-            return 0.5
-                * (rec.normal + DVec3::new(1., 1., 1.));
+            let direction: DVec3 =
+                random_on_hemisphere(&rec.normal);
+            let ray = Ray {
+                origin: rec.point,
+                direction,
+            };
+            return 0.5 * ray.color(depth - 1, world);
         }
 
         let unit_direction: DVec3 =
@@ -341,5 +354,35 @@ impl Hittable for HittableList {
             });
 
         hit_record
+    }
+}
+
+fn random_in_unit_sphere() -> DVec3 {
+    let mut rng = rand::thread_rng();
+    loop {
+        let vec = DVec3::new(
+            rng.gen_range(-1.0..1.),
+            rng.gen_range(-1.0..1.),
+            rng.gen_range(-1.0..1.),
+        );
+
+        if vec.length_squared() < 1. {
+            break vec;
+        }
+    }
+}
+
+fn random_unit_vector() -> DVec3 {
+    return random_in_unit_sphere().normalize();
+}
+
+fn random_on_hemisphere(normal: &DVec3) -> DVec3 {
+    let on_unit_sphere = random_unit_vector();
+    if on_unit_sphere.dot(*normal) > 0.0
+    // In the same hemisphere as the normal
+    {
+        on_unit_sphere
+    } else {
+        -on_unit_sphere
     }
 }
