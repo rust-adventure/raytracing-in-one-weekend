@@ -1,19 +1,44 @@
 use glam::DVec3;
 use indicatif::ProgressIterator;
 use itertools::Itertools;
-use rand::{distributions::Uniform, prelude::*};
+use rand::prelude::*;
 use std::{fs, io, ops::Range};
 
 fn main() -> io::Result<()> {
     let mut world = HittableList { objects: vec![] };
 
+    let material_ground = Material::Lambertian {
+        albedo: DVec3::new(0.8, 0.8, 0.0),
+    };
+    let material_center = Material::Lambertian {
+        albedo: DVec3::new(0.7, 0.3, 0.3),
+    };
+    let material_left = Material::Metal {
+        albedo: DVec3::new(0.8, 0.8, 0.8),
+    };
+    let material_right = Material::Metal {
+        albedo: DVec3::new(0.8, 0.6, 0.2),
+    };
+
+    world.add(Sphere {
+        center: DVec3::new(0.0, -100.5, -1.0),
+        radius: 100.0,
+        material: material_ground,
+    });
     world.add(Sphere {
         center: DVec3::new(0.0, 0.0, -1.0),
         radius: 0.5,
+        material: material_center,
     });
     world.add(Sphere {
-        center: DVec3::new(0., -100.5, -1.),
-        radius: 100.,
+        center: DVec3::new(-1.0, 0.0, -1.0),
+        radius: 0.5,
+        material: material_left,
+    });
+    world.add(Sphere {
+        center: DVec3::new(1.0, 0.0, -1.0),
+        radius: 0.5,
+        material: material_right,
     });
 
     let camera = Camera::new(400, 16.0 / 9.0);
@@ -187,13 +212,15 @@ impl Ray {
         if let Some(rec) =
             world.hit(&self, (0.001)..f64::INFINITY)
         {
-            let direction: DVec3 =
-                rec.normal + random_unit_vector();
-            let ray = Ray {
-                origin: rec.point,
-                direction,
-            };
-            return 0.5 * ray.color(depth - 1, world);
+            if let Some(Scattered {
+                attenuation,
+                scattered,
+            }) = rec.material.scatter(self, rec.clone())
+            {
+                return attenuation
+                    * scattered.color(depth - 1, world);
+            }
+            return DVec3::new(0., 0., 0.);
         }
 
         let unit_direction: DVec3 =
@@ -212,14 +239,75 @@ trait Hittable {
     ) -> Option<HitRecord>;
 }
 
+#[non_exhaustive]
+#[derive(Clone)]
+enum Material {
+    Lambertian { albedo: DVec3 },
+    Metal { albedo: DVec3 },
+}
+struct Scattered {
+    attenuation: DVec3,
+    scattered: Ray,
+}
+impl Material {
+    fn scatter(
+        &self,
+        r_in: &Ray,
+        hit_record: HitRecord,
+    ) -> Option<Scattered> {
+        match self {
+            Material::Lambertian { albedo } => {
+                let mut scatter_direction = hit_record
+                    .normal
+                    + random_unit_vector();
+
+                // Catch degenerate scatter direction
+                if scatter_direction.abs_diff_eq(
+                    DVec3::new(0., 0., 0.),
+                    1e-8,
+                ) {
+                    scatter_direction = hit_record.normal;
+                }
+
+                let scattered = Ray {
+                    origin: hit_record.point,
+                    direction: scatter_direction,
+                };
+
+                Some(Scattered {
+                    attenuation: *albedo,
+                    scattered,
+                })
+            }
+            Material::Metal { albedo } => {
+                let reflected: DVec3 = reflect(
+                    r_in.direction.normalize(),
+                    hit_record.normal,
+                );
+                Some(Scattered {
+                    attenuation: *albedo,
+                    scattered: Ray {
+                        origin: hit_record.point,
+                        direction: reflected,
+                    },
+                })
+            }
+            _ => None,
+        }
+    }
+}
+
+#[derive(Clone)]
 struct HitRecord {
     point: DVec3,
     normal: DVec3,
     t: f64,
     front_face: bool,
+    material: Material,
 }
 impl HitRecord {
     fn with_face_normal(
+        material: Material,
         point: DVec3,
         outward_normal: DVec3,
         t: f64,
@@ -231,6 +319,7 @@ impl HitRecord {
                 &outward_normal,
             );
         HitRecord {
+            material,
             point,
             normal,
             t,
@@ -281,6 +370,7 @@ impl HitRecord {
 struct Sphere {
     center: DVec3,
     radius: f64,
+    material: Material,
 }
 
 impl Hittable for Sphere {
@@ -316,6 +406,7 @@ impl Hittable for Sphere {
             (point - self.center) / self.radius;
 
         let rec = HitRecord::with_face_normal(
+            self.material.clone(),
             point,
             outward_normal,
             t,
@@ -396,4 +487,8 @@ fn random_on_hemisphere(normal: &DVec3) -> DVec3 {
     } else {
         -on_unit_sphere
     }
+}
+
+fn reflect(v: DVec3, n: DVec3) -> DVec3 {
+    return v - 2. * v.dot(n) * n;
 }
