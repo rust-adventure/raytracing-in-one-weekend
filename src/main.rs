@@ -1,9 +1,13 @@
 use glam::DVec3;
+use indicatif::ParallelProgressIterator;
 use indicatif::ProgressIterator;
 use itertools::Itertools;
 use rand::prelude::*;
-use std::{fs, io, ops::Range};
+use rayon::iter::IntoParallelRefIterator;
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
+use rayon::prelude::*;
 
+use std::{fs, io, ops::Range};
 fn main() -> io::Result<()> {
     let mut rng = rand::thread_rng();
 
@@ -111,7 +115,7 @@ fn main() -> io::Result<()> {
         look_at: Some(DVec3::ZERO),
         vup: Some(DVec3::Y),
         focus_dist: Some(10.0),
-        defocus_angle: Some(0.6),
+        defocus_angle: Some(0.0),
     });
     camera.render_to_disk(world)?;
 
@@ -301,10 +305,12 @@ impl Camera {
     }
     fn render_to_disk<T>(&self, world: T) -> io::Result<()>
     where
-        T: Hittable,
+        T: Hittable + std::marker::Sync,
     {
         let pixels = (0..self.image_height)
             .cartesian_product(0..self.image_width)
+            .collect::<Vec<(u32, u32)>>()
+            .into_par_iter()
             .progress_count(
                 self.image_height as u64
                     * self.image_width as u64,
@@ -347,6 +353,7 @@ impl Camera {
                     color.x, color.y, color.z
                 )
             })
+            .collect::<Vec<String>>()
             .join("\n");
         fs::write(
             "output.ppm",
@@ -379,7 +386,7 @@ impl Ray {
     }
     fn color<T>(&self, depth: i32, world: &T) -> DVec3
     where
-        T: Hittable,
+        T: Hittable + std::marker::Sync,
     {
         if depth <= 0 {
             return DVec3::new(0., 0., 0.);
@@ -656,7 +663,7 @@ impl Hittable for Sphere {
 }
 
 struct HittableList {
-    objects: Vec<Box<dyn Hittable>>,
+    objects: Vec<Box<dyn Hittable + Sync>>,
 }
 impl HittableList {
     fn clear(&mut self) {
@@ -665,7 +672,7 @@ impl HittableList {
 
     fn add<T>(&mut self, object: T)
     where
-        T: Hittable + 'static,
+        T: Hittable + 'static + Sync,
     {
         // was push_back
         self.objects.push(Box::new(object));
