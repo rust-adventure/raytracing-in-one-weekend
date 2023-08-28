@@ -7,26 +7,6 @@ use std::{fs, io, ops::Range};
 fn main() -> io::Result<()> {
     let mut world = HittableList { objects: vec![] };
 
-    /// the vfov scene is commented out here
-    // let R = (std::f64::consts::PI / 4.).cos();
-
-    // let material_left = Material::Lambertian {
-    //     albedo: DVec3::new(0., 0., 1.),
-    // };
-    // let material_right = Material::Lambertian {
-    //     albedo: DVec3::new(1., 0., 0.),
-    // };
-
-    // world.add(Sphere {
-    //     center: DVec3::new(-R, 0., -1.),
-    //     radius: R,
-    //     material: material_left,
-    // });
-    // world.add(Sphere {
-    //     center: DVec3::new(R, 0., -1.),
-    //     radius: R,
-    //     material: material_right,
-    // });
     let material_ground = Material::Lambertian {
         albedo: DVec3::new(0.8, 0.8, 0.0),
     };
