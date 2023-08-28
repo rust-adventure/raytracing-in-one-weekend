@@ -2,8 +2,7 @@ use glam::DVec3;
 use itertools::Itertools;
 use rand::prelude::*;
 use raytracer::{
-    camera::{Camera, CameraNew},
-    material::Material,
+    camera::Camera, material::Material,
     shapes::sphere::Sphere,
 };
 
@@ -108,15 +107,17 @@ fn main() -> io::Result<()> {
         material: material3,
     });
 
-    let camera = Camera::new(CameraNew {
-        image_width: 1200,
-        aspect_ratio: 16.0 / 9.0,
-        look_from: Some(DVec3::new(13., 2., 3.)),
-        look_at: Some(DVec3::ZERO),
-        vup: Some(DVec3::Y),
-        focus_dist: Some(10.0),
-        defocus_angle: Some(0.0),
-    });
+    let camera = Camera::init()
+        .image_width(1200)
+        .aspect_ratio(16.0 / 9.0)
+        .look_from(DVec3::new(13., 2., 3.))
+        .look_at(DVec3::ZERO)
+        .vup(DVec3::Y)
+        .focus_dist(10.0)
+        .defocus_angle(0.0)
+        .samples_per_pixel(500)
+        .max_depth(50)
+        .build();
     camera.render_to_disk(world)?;
 
     Ok(())

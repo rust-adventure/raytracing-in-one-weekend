@@ -123,7 +123,6 @@ impl Material {
                     },
                 })
             }
-            _ => None,
         }
     }
 }

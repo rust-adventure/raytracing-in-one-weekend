@@ -20,13 +20,15 @@ pub fn random_unit_vector() -> DVec3 {
     return random_in_unit_sphere().normalize();
 }
 
-fn random_on_hemisphere(normal: &DVec3) -> DVec3 {
-    let on_unit_sphere = random_unit_vector();
-    if on_unit_sphere.dot(*normal) > 0.0
-    // In the same hemisphere as the normal
-    {
-        on_unit_sphere
-    } else {
-        -on_unit_sphere
-    }
-}
+// this function is used in the series, but is unused by the end
+// of the series
+// fn random_on_hemisphere(normal: &DVec3) -> DVec3 {
+//     let on_unit_sphere = random_unit_vector();
+//     if on_unit_sphere.dot(*normal) > 0.0
+//     // In the same hemisphere as the normal
+//     {
+//         on_unit_sphere
+//     } else {
+//         -on_unit_sphere
+//     }
+// }
