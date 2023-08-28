@@ -10,15 +10,15 @@ fn main() -> io::Result<()> {
     let material_ground = Material::Lambertian {
         albedo: DVec3::new(0.8, 0.8, 0.0),
     };
-    let material_center = Material::Dielectric {
-        index_of_refraction: 1.5,
+    let material_center = Material::Lambertian {
+        albedo: DVec3::new(0.1, 0.2, 0.5),
     };
     let material_left = Material::Dielectric {
         index_of_refraction: 1.5,
     };
     let material_right = Material::Metal {
         albedo: DVec3::new(0.8, 0.6, 0.2),
-        fuzz: 1.0,
+        fuzz: 0.0,
     };
 
     world.add(Sphere {
@@ -315,6 +315,8 @@ impl Material {
             Material::Dielectric {
                 index_of_refraction,
             } => {
+                let mut rng = rand::thread_rng();
+
                 let attenuation = DVec3::splat(1.0);
                 let refraction_ratio: f64 =
                     if hit_record.front_face {
@@ -325,17 +327,39 @@ impl Material {
 
                 let unit_direction =
                     r_in.direction.normalize();
-                let refracted = refract(
-                    unit_direction,
-                    hit_record.normal,
-                    refraction_ratio,
-                );
+
+                let cos_theta = (-unit_direction
+                    .dot(hit_record.normal))
+                .min(1.0);
+                let sin_theta =
+                    (1.0 - cos_theta * cos_theta).sqrt();
+
+                let cannot_refract =
+                    refraction_ratio * sin_theta > 1.0;
+
+                let direction = if cannot_refract
+                    || reflectance(
+                        cos_theta,
+                        refraction_ratio,
+                    ) > rng.gen::<f64>()
+                {
+                    reflect(
+                        unit_direction,
+                        hit_record.normal,
+                    )
+                } else {
+                    refract(
+                        unit_direction,
+                        hit_record.normal,
+                        refraction_ratio,
+                    )
+                };
 
                 Some(Scattered {
                     attenuation,
                     scattered: Ray {
                         origin: hit_record.point,
-                        direction: refracted,
+                        direction: direction,
                     },
                 })
             }
@@ -551,4 +575,11 @@ fn refract(
         -((1.0 - r_out_perp.length_squared()).abs()).sqrt()
             * n;
     return r_out_perp + r_out_parallel;
+}
+
+fn reflectance(cosine: f64, ref_idx: f64) -> f64 {
+    // Use Schlick's approximation for reflectance.
+    let mut r0 = (1. - ref_idx) / (1. + ref_idx);
+    r0 = r0 * r0;
+    return r0 + (1. - r0) * (1. - cosine).powf(5.);
 }
