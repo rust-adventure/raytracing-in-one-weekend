@@ -5,21 +5,21 @@ use raytracer::{
     camera::Camera, material::Material,
     shapes::sphere::Sphere,
 };
-
 use std::io;
+
 fn main() -> io::Result<()> {
     let mut rng = rand::thread_rng();
 
     let mut world = vec![];
 
-    let ground_material = Material::Lambertian {
-        albedo: DVec3::new(0.5, 0.5, 0.5),
-    };
     world.push(Sphere {
         center: DVec3::new(0., -1000., 0.),
         radius: 1000.,
-        material: ground_material,
+        material: Material::Lambertian {
+            albedo: DVec3::new(0.5, 0.5, 0.5),
+        },
     });
+
     for (a, b) in
         (-11..11).cartesian_product(-11..11).into_iter()
     {
@@ -32,7 +32,7 @@ fn main() -> io::Result<()> {
 
         if (center - DVec3::new(4., 0.2, 0.)).length() > 0.9
         {
-            if choose_mat < 0.8 {
+            let material = if choose_mat < 0.8 {
                 // diffuse
                 let albedo = DVec3::new(
                     rng.gen_range(0f64..1.),
@@ -43,13 +43,7 @@ fn main() -> io::Result<()> {
                     rng.gen_range(0f64..1.),
                     rng.gen_range(0f64..1.),
                 );
-                let material =
-                    Material::Lambertian { albedo: albedo };
-                world.push(Sphere {
-                    center,
-                    radius: 0.2,
-                    material,
-                });
+                Material::Lambertian { albedo: albedo }
             } else if choose_mat < 0.95 {
                 // metal
                 let albedo = DVec3::new(
@@ -58,53 +52,46 @@ fn main() -> io::Result<()> {
                     rng.gen_range(0.5..1.),
                 );
                 let fuzz = rng.gen_range(0f64..0.5);
-                let material =
-                    Material::Metal { albedo, fuzz };
-                world.push(Sphere {
-                    center,
-                    radius: 0.2,
-                    material,
-                });
+
+                Material::Metal { albedo, fuzz }
             } else {
                 // glass
-                let material = Material::Dielectric {
+                Material::Dielectric {
                     index_of_refraction: 1.5,
-                };
-                world.push(Sphere {
-                    center,
-                    radius: 0.2,
-                    material,
-                });
-            }
+                }
+            };
+
+            world.push(Sphere {
+                center,
+                radius: 0.2,
+                material,
+            });
         }
     }
 
-    let material1 = Material::Dielectric {
-        index_of_refraction: 1.5,
-    };
     world.push(Sphere {
         center: DVec3::new(0., 1., 0.),
         radius: 1.0,
-        material: material1,
+        material: Material::Dielectric {
+            index_of_refraction: 1.5,
+        },
     });
 
-    let material2 = Material::Lambertian {
-        albedo: DVec3::new(0.4, 0.2, 0.1),
-    };
     world.push(Sphere {
         center: DVec3::new(-4., 1., 0.),
         radius: 1.0,
-        material: material2,
+        material: Material::Lambertian {
+            albedo: DVec3::new(0.4, 0.2, 0.1),
+        },
     });
 
-    let material3 = Material::Metal {
-        albedo: DVec3::new(0.7, 0.6, 0.5),
-        fuzz: 0.0,
-    };
     world.push(Sphere {
         center: DVec3::new(4., 1., 0.),
         radius: 1.0,
-        material: material3,
+        material: Material::Metal {
+            albedo: DVec3::new(0.7, 0.6, 0.5),
+            fuzz: 0.0,
+        },
     });
 
     let camera = Camera::init()
@@ -118,6 +105,7 @@ fn main() -> io::Result<()> {
         .samples_per_pixel(500)
         .max_depth(50)
         .build();
+
     camera.render_to_disk(world)?;
 
     Ok(())
