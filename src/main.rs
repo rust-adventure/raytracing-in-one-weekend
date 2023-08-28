@@ -47,13 +47,15 @@ fn main() -> io::Result<()> {
         material: material_right,
     });
 
-    let camera = Camera::new(
-        400,
-        16.0 / 9.0,
-        Some(DVec3::new(-2., 2., 1.)),
-        Some(DVec3::new(0., 0., -1.)),
-        Some(DVec3::Y),
-    );
+    let camera = Camera::new(CameraNew {
+        image_width: 400,
+        aspect_ratio: 16.0 / 9.0,
+        look_from: Some(DVec3::new(-2., 2., 1.)),
+        look_at: Some(DVec3::new(0., 0., -1.)),
+        vup: Some(DVec3::Y),
+        focus_dist: Some(3.4),
+        defocus_angle: Some(0.0),
+    });
     camera.render_to_disk(world)?;
 
     Ok(())
@@ -98,31 +100,48 @@ struct Camera {
     v: DVec3,
     #[doc(hidden)]
     w: DVec3,
+
+    /// Variation angle of rays through each pixel
+    defocus_angle: f64,
+    /// Distance from camera lookfrom point to plane of perfect focus
+    focus_dist: f64,
+    /// Defocus disk horizontal radius
+    defocus_disk_u: DVec3,
+    /// Defocus disk vertical radius
+    defocus_disk_v: DVec3,
+}
+struct CameraNew {
+    image_width: u32,
+    aspect_ratio: f64,
+    look_from: Option<DVec3>,
+    look_at: Option<DVec3>,
+    vup: Option<DVec3>,
+    focus_dist: Option<f64>,
+    defocus_angle: Option<f64>,
 }
 impl Camera {
-    fn new(
-        image_width: u32,
-        aspect_ratio: f64,
-        look_from: Option<DVec3>,
-        look_at: Option<DVec3>,
-        vup: Option<DVec3>,
-    ) -> Self {
-        let lookfrom = look_from.unwrap_or(DVec3::NEG_Z);
-        let lookat = look_at.unwrap_or(DVec3::ZERO);
-        let vup = vup.unwrap_or(DVec3::Y);
+    fn new(config: CameraNew) -> Self {
+        let lookfrom =
+            config.look_from.unwrap_or(DVec3::NEG_Z);
+        let lookat = config.look_at.unwrap_or(DVec3::ZERO);
+        let vup = config.vup.unwrap_or(DVec3::Y);
+        let focus_dist = config.focus_dist.unwrap_or(10.);
+        let defocus_angle =
+            config.defocus_angle.unwrap_or(0.);
 
         let max_value: u8 = 255;
-        let image_height: u32 =
-            (image_width as f64 / aspect_ratio) as u32;
-        let focal_length: f64 =
-            (lookfrom - lookat).length();
+        let image_height: u32 = (config.image_width as f64
+            / config.aspect_ratio)
+            as u32;
+
         let vfov: f64 = 20.0;
         let theta = vfov.to_radians();
         let h = (theta / 2.).tan();
 
-        let viewport_height = 2. * h * focal_length;
+        let viewport_height = 2. * h * focus_dist;
         let viewport_width: f64 = viewport_height
-            * (image_width as f64 / image_height as f64);
+            * (config.image_width as f64
+                / image_height as f64);
 
         let center: DVec3 = lookfrom;
 
@@ -139,23 +158,32 @@ impl Camera {
 
         // Calculate the horizontal and vertical delta vectors from pixel to pixel.
         let pixel_delta_u: DVec3 =
-            viewport_u / image_width as f64;
+            viewport_u / config.image_width as f64;
         let pixel_delta_v: DVec3 =
             viewport_v / image_height as f64;
 
         // Calculate the location of the upper left pixel.
         let viewport_upper_left: DVec3 = center
-            - (focal_length * w)
+            - focus_dist * w
             - viewport_u / 2.
             - viewport_v / 2.;
         let pixel00_loc: DVec3 = viewport_upper_left
             + 0.5 * (pixel_delta_u + pixel_delta_v);
 
+        // Calculate the camera defocus disk basis vectors.
+        //   no tan: 0.296705972839036
+        // with tan: 0.29746145598814155
+        let defocus_radius = focus_dist
+            * (defocus_angle / 2.).to_radians().tan();
+
+        let defocus_disk_u = u * defocus_radius;
+        let defocus_disk_v = v * defocus_radius;
+
         Self {
-            image_width,
+            image_width: config.image_width,
             image_height,
             max_value,
-            aspect_ratio,
+            aspect_ratio: config.aspect_ratio,
             center,
             pixel_delta_u,
             pixel_delta_v,
@@ -170,6 +198,10 @@ impl Camera {
             u,
             v,
             w,
+            defocus_angle,
+            focus_dist,
+            defocus_disk_u,
+            defocus_disk_v,
         }
     }
     fn get_ray(&self, i: i32, j: i32) -> Ray {
@@ -181,13 +213,25 @@ impl Camera {
         let pixel_sample =
             pixel_center + self.pixel_sample_square();
 
-        let ray_origin = self.center;
+        let ray_origin = if self.defocus_angle <= 0. {
+            self.center
+        } else {
+            self.defocus_disk_sample()
+        };
+
         let ray_direction = pixel_sample - ray_origin;
 
         Ray {
             origin: self.center,
             direction: ray_direction,
         }
+    }
+    fn defocus_disk_sample(&self) -> DVec3 {
+        // Returns a random point in the camera defocus disk.
+        let p = random_in_unit_disk();
+        self.center
+            + (p.x * self.defocus_disk_u)
+            + (p.y * self.defocus_disk_v)
     }
 
     fn pixel_sample_square(&self) -> DVec3 {
@@ -648,4 +692,19 @@ fn reflectance(cosine: f64, ref_idx: f64) -> f64 {
     let mut r0 = (1. - ref_idx) / (1. + ref_idx);
     r0 = r0 * r0;
     return r0 + (1. - r0) * (1. - cosine).powf(5.);
+}
+
+fn random_in_unit_disk() -> DVec3 {
+    let mut rng = rand::thread_rng();
+    loop {
+        let v = DVec3::new(
+            rng.gen_range(-1.0..1.),
+            rng.gen_range(-1.0..1.),
+            0.,
+        );
+
+        if v.length_squared() < 1. {
+            break v;
+        }
+    }
 }
