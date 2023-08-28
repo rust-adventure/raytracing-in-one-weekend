@@ -1,8 +1,6 @@
-use std::ops::Range;
-
-use glam::DVec3;
-
 use crate::{material::Material, ray::Ray};
+use glam::DVec3;
+use std::ops::Range;
 
 pub trait Hittable {
     fn hit(
@@ -65,60 +63,29 @@ impl HitRecord {
         };
         (front_face, normal)
     }
-    // Unused
-    fn set_face_normal(
-        &mut self,
-        ray: &Ray,
-        outward_normal: &DVec3,
-    ) {
-        let (front_face, normal) =
-            HitRecord::calc_face_normal(
-                ray,
-                outward_normal,
-            );
-
-        self.front_face = front_face;
-        self.normal = normal;
-    }
 }
 
-pub struct HittableList {
-    pub objects: Vec<Box<dyn Hittable + Sync>>,
-}
-impl HittableList {
-    fn clear(&mut self) {
-        self.objects = vec![]
-    }
-
-    pub fn add<T>(&mut self, object: T)
-    where
-        T: Hittable + 'static + Sync,
-    {
-        // was push_back
-        self.objects.push(Box::new(object));
-    }
-}
-
-impl Hittable for HittableList {
+impl<T> Hittable for Vec<T>
+where
+    T: Hittable + Sync,
+{
     fn hit(
         &self,
         ray: &Ray,
         interval: Range<f64>,
     ) -> Option<HitRecord> {
-        let (_closest, hit_record) = self
-            .objects
-            .iter()
-            .fold((interval.end, None), |acc, item| {
-                if let Some(temp_rec) = item.hit(
-                    ray,
-                    interval.start..acc.0,
-                    // acc.0,
-                ) {
+        let (_closest, hit_record) = self.iter().fold(
+            (interval.end, None),
+            |acc, item| {
+                if let Some(temp_rec) =
+                    item.hit(ray, interval.start..acc.0)
+                {
                     (temp_rec.t, Some(temp_rec))
                 } else {
                     acc
                 }
-            });
+            },
+        );
 
         hit_record
     }

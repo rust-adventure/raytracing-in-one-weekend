@@ -3,7 +3,6 @@ use itertools::Itertools;
 use rand::prelude::*;
 use raytracer::{
     camera::{Camera, CameraNew},
-    hittable::HittableList,
     material::Material,
     shapes::sphere::Sphere,
 };
@@ -12,12 +11,12 @@ use std::io;
 fn main() -> io::Result<()> {
     let mut rng = rand::thread_rng();
 
-    let mut world = HittableList { objects: vec![] };
+    let mut world = vec![];
 
     let ground_material = Material::Lambertian {
         albedo: DVec3::new(0.5, 0.5, 0.5),
     };
-    world.add(Sphere {
+    world.push(Sphere {
         center: DVec3::new(0., -1000., 0.),
         radius: 1000.,
         material: ground_material,
@@ -47,7 +46,7 @@ fn main() -> io::Result<()> {
                 );
                 let material =
                     Material::Lambertian { albedo: albedo };
-                world.add(Sphere {
+                world.push(Sphere {
                     center,
                     radius: 0.2,
                     material,
@@ -62,7 +61,7 @@ fn main() -> io::Result<()> {
                 let fuzz = rng.gen_range(0f64..0.5);
                 let material =
                     Material::Metal { albedo, fuzz };
-                world.add(Sphere {
+                world.push(Sphere {
                     center,
                     radius: 0.2,
                     material,
@@ -72,7 +71,7 @@ fn main() -> io::Result<()> {
                 let material = Material::Dielectric {
                     index_of_refraction: 1.5,
                 };
-                world.add(Sphere {
+                world.push(Sphere {
                     center,
                     radius: 0.2,
                     material,
@@ -84,7 +83,7 @@ fn main() -> io::Result<()> {
     let material1 = Material::Dielectric {
         index_of_refraction: 1.5,
     };
-    world.add(Sphere {
+    world.push(Sphere {
         center: DVec3::new(0., 1., 0.),
         radius: 1.0,
         material: material1,
@@ -93,7 +92,7 @@ fn main() -> io::Result<()> {
     let material2 = Material::Lambertian {
         albedo: DVec3::new(0.4, 0.2, 0.1),
     };
-    world.add(Sphere {
+    world.push(Sphere {
         center: DVec3::new(-4., 1., 0.),
         radius: 1.0,
         material: material2,
@@ -103,7 +102,7 @@ fn main() -> io::Result<()> {
         albedo: DVec3::new(0.7, 0.6, 0.5),
         fuzz: 0.0,
     };
-    world.add(Sphere {
+    world.push(Sphere {
         center: DVec3::new(4., 1., 0.),
         radius: 1.0,
         material: material3,
