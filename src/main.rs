@@ -15,9 +15,11 @@ fn main() -> io::Result<()> {
     };
     let material_left = Material::Metal {
         albedo: DVec3::new(0.8, 0.8, 0.8),
+        fuzz: 0.3,
     };
     let material_right = Material::Metal {
         albedo: DVec3::new(0.8, 0.6, 0.2),
+        fuzz: 1.0,
     };
 
     world.add(Sphere {
@@ -149,27 +151,34 @@ impl Camera {
                     .samples_per_pixel)
                     .into_iter()
                     .map(|_| {
-                        let color = self
-                            .get_ray(x as i32, y as i32)
+                        self.get_ray(x as i32, y as i32)
                             .color(
                                 self.max_depth as i32,
                                 &world,
                             )
-                            * 255.0
-                            * scale_factor;
-                        DVec3 {
-                            x: linear_to_gamma(color.x),
-                            y: linear_to_gamma(color.y),
-                            z: linear_to_gamma(color.z),
-                        }
                     })
-                    .sum::<DVec3>();
+                    .sum::<DVec3>()
+                    * scale_factor;
 
+                // * 256.
+                let color = DVec3 {
+                    x: linear_to_gamma(
+                        multisampled_pixel_color.x,
+                    ),
+                    y: linear_to_gamma(
+                        multisampled_pixel_color.y,
+                    ),
+                    z: linear_to_gamma(
+                        multisampled_pixel_color.z,
+                    ),
+                }
+                .clamp(
+                    DVec3::splat(0.),
+                    DVec3::splat(0.999),
+                ) * 256.;
                 format!(
                     "{} {} {}",
-                    multisampled_pixel_color.x,
-                    multisampled_pixel_color.y,
-                    multisampled_pixel_color.z
+                    color.x, color.y, color.z
                 )
             })
             .join("\n");
@@ -243,7 +252,7 @@ trait Hittable {
 #[derive(Clone)]
 enum Material {
     Lambertian { albedo: DVec3 },
-    Metal { albedo: DVec3 },
+    Metal { albedo: DVec3, fuzz: f64 },
 }
 struct Scattered {
     attenuation: DVec3,
@@ -279,18 +288,29 @@ impl Material {
                     scattered,
                 })
             }
-            Material::Metal { albedo } => {
+            Material::Metal { albedo, fuzz } => {
                 let reflected: DVec3 = reflect(
                     r_in.direction.normalize(),
                     hit_record.normal,
                 );
-                Some(Scattered {
-                    attenuation: *albedo,
-                    scattered: Ray {
-                        origin: hit_record.point,
-                        direction: reflected,
-                    },
-                })
+                let scattered = Ray {
+                    origin: hit_record.point,
+                    direction: reflected
+                        + *fuzz * random_unit_vector(),
+                };
+                // absorb any scatter that is below the surface
+                if scattered
+                    .direction
+                    .dot(hit_record.normal)
+                    > 0.
+                {
+                    Some(Scattered {
+                        attenuation: *albedo,
+                        scattered,
+                    })
+                } else {
+                    None
+                }
             }
             _ => None,
         }
