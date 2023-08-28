@@ -7,6 +7,26 @@ use std::{fs, io, ops::Range};
 fn main() -> io::Result<()> {
     let mut world = HittableList { objects: vec![] };
 
+    /// the vfov scene is commented out here
+    // let R = (std::f64::consts::PI / 4.).cos();
+
+    // let material_left = Material::Lambertian {
+    //     albedo: DVec3::new(0., 0., 1.),
+    // };
+    // let material_right = Material::Lambertian {
+    //     albedo: DVec3::new(1., 0., 0.),
+    // };
+
+    // world.add(Sphere {
+    //     center: DVec3::new(-R, 0., -1.),
+    //     radius: R,
+    //     material: material_left,
+    // });
+    // world.add(Sphere {
+    //     center: DVec3::new(R, 0., -1.),
+    //     radius: R,
+    //     material: material_right,
+    // });
     let material_ground = Material::Lambertian {
         albedo: DVec3::new(0.8, 0.8, 0.0),
     };
@@ -34,6 +54,11 @@ fn main() -> io::Result<()> {
     world.add(Sphere {
         center: DVec3::new(-1.0, 0.0, -1.0),
         radius: 0.5,
+        material: material_left.clone(),
+    });
+    world.add(Sphere {
+        center: DVec3::new(-1.0, 0.0, -1.0),
+        radius: -0.4,
         material: material_left,
     });
     world.add(Sphere {
@@ -42,41 +67,95 @@ fn main() -> io::Result<()> {
         material: material_right,
     });
 
-    let camera = Camera::new(400, 16.0 / 9.0);
+    let camera = Camera::new(
+        400,
+        16.0 / 9.0,
+        Some(DVec3::new(-2., 2., 1.)),
+        Some(DVec3::new(0., 0., -1.)),
+        Some(DVec3::Y),
+    );
     camera.render_to_disk(world)?;
 
     Ok(())
 }
 
+/// Hidden docs are calculated fields
 struct Camera {
+    /// Rendered image width in pixel count
     image_width: u32,
+    #[doc(hidden)]
     image_height: u32,
+    #[doc(hidden)]
     max_value: u8,
+    /// Ratio of image width over height
     aspect_ratio: f64,
+    #[doc(hidden)]
     center: DVec3,
+    #[doc(hidden)]
     pixel_delta_u: DVec3,
+    #[doc(hidden)]
     pixel_delta_v: DVec3,
     // viewport_upper_left: DVec3,
+    #[doc(hidden)]
     pixel00_loc: DVec3,
+    /// Count of random samples for each pixel
     samples_per_pixel: u32,
+    /// Maximum number of ray bounces into scene
     max_depth: u32,
+    /// Vertical view angle (field of view)
+    vfov: f64,
+    /// Point camera is looking from
+    lookfrom: DVec3,
+    /// Point camera is looking at
+    lookat: DVec3,
+    /// Camera-relative "up" direction
+    vup: DVec3,
+
+    /// basis vectors
+    #[doc(hidden)]
+    u: DVec3,
+    #[doc(hidden)]
+    v: DVec3,
+    #[doc(hidden)]
+    w: DVec3,
 }
 impl Camera {
-    fn new(image_width: u32, aspect_ratio: f64) -> Self {
+    fn new(
+        image_width: u32,
+        aspect_ratio: f64,
+        look_from: Option<DVec3>,
+        look_at: Option<DVec3>,
+        vup: Option<DVec3>,
+    ) -> Self {
+        let lookfrom = look_from.unwrap_or(DVec3::NEG_Z);
+        let lookat = look_at.unwrap_or(DVec3::ZERO);
+        let vup = vup.unwrap_or(DVec3::Y);
+
         let max_value: u8 = 255;
         let image_height: u32 =
             (image_width as f64 / aspect_ratio) as u32;
-        let viewport_height: f64 = 2.0;
+        let focal_length: f64 =
+            (lookfrom - lookat).length();
+        let vfov: f64 = 20.0;
+        let theta = vfov.to_radians();
+        let h = (theta / 2.).tan();
+
+        let viewport_height = 2. * h * focal_length;
         let viewport_width: f64 = viewport_height
             * (image_width as f64 / image_height as f64);
-        let focal_length: f64 = 1.0;
-        let center: DVec3 = DVec3::ZERO;
 
-        // Calculate the vectors across the horizontal and down the vertical viewport edges.
-        let viewport_u: DVec3 =
-            DVec3::new(viewport_width, 0., 0.);
-        let viewport_v: DVec3 =
-            DVec3::new(0., -viewport_height, 0.);
+        let center: DVec3 = lookfrom;
+
+        // Calculate the u,v,w unit basis vectors for the camera coordinate frame.
+        let w = (lookfrom - lookat).normalize();
+        let u = vup.cross(w).normalize();
+        let v = w.cross(u);
+
+        // ## Calculate the vectors across the horizontal and down the vertical viewport edges.
+        // Vector across viewport horizontal edge
+        let viewport_u = viewport_width * u;
+        // Vector down viewport vertical edge
+        let viewport_v = viewport_height * -v;
 
         // Calculate the horizontal and vertical delta vectors from pixel to pixel.
         let pixel_delta_u: DVec3 =
@@ -86,7 +165,7 @@ impl Camera {
 
         // Calculate the location of the upper left pixel.
         let viewport_upper_left: DVec3 = center
-            - DVec3::new(0., 0., focal_length)
+            - (focal_length * w)
             - viewport_u / 2.
             - viewport_v / 2.;
         let pixel00_loc: DVec3 = viewport_upper_left
@@ -104,6 +183,13 @@ impl Camera {
             pixel00_loc,
             samples_per_pixel: 100,
             max_depth: 50,
+            vfov,
+            lookfrom,
+            lookat,
+            vup,
+            u,
+            v,
+            w,
         }
     }
     fn get_ray(&self, i: i32, j: i32) -> Ray {
