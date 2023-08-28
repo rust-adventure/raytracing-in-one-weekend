@@ -10,12 +10,11 @@ fn main() -> io::Result<()> {
     let material_ground = Material::Lambertian {
         albedo: DVec3::new(0.8, 0.8, 0.0),
     };
-    let material_center = Material::Lambertian {
-        albedo: DVec3::new(0.7, 0.3, 0.3),
+    let material_center = Material::Dielectric {
+        index_of_refraction: 1.5,
     };
-    let material_left = Material::Metal {
-        albedo: DVec3::new(0.8, 0.8, 0.8),
-        fuzz: 0.3,
+    let material_left = Material::Dielectric {
+        index_of_refraction: 1.5,
     };
     let material_right = Material::Metal {
         albedo: DVec3::new(0.8, 0.6, 0.2),
@@ -253,6 +252,7 @@ trait Hittable {
 enum Material {
     Lambertian { albedo: DVec3 },
     Metal { albedo: DVec3, fuzz: f64 },
+    Dielectric { index_of_refraction: f64 },
 }
 struct Scattered {
     attenuation: DVec3,
@@ -311,6 +311,33 @@ impl Material {
                 } else {
                     None
                 }
+            }
+            Material::Dielectric {
+                index_of_refraction,
+            } => {
+                let attenuation = DVec3::splat(1.0);
+                let refraction_ratio: f64 =
+                    if hit_record.front_face {
+                        index_of_refraction.recip()
+                    } else {
+                        *index_of_refraction
+                    };
+
+                let unit_direction =
+                    r_in.direction.normalize();
+                let refracted = refract(
+                    unit_direction,
+                    hit_record.normal,
+                    refraction_ratio,
+                );
+
+                Some(Scattered {
+                    attenuation,
+                    scattered: Ray {
+                        origin: hit_record.point,
+                        direction: refracted,
+                    },
+                })
             }
             _ => None,
         }
@@ -511,4 +538,17 @@ fn random_on_hemisphere(normal: &DVec3) -> DVec3 {
 
 fn reflect(v: DVec3, n: DVec3) -> DVec3 {
     return v - 2. * v.dot(n) * n;
+}
+
+fn refract(
+    uv: DVec3,
+    n: DVec3,
+    etai_over_etat: f64,
+) -> DVec3 {
+    let cos_theta = (-uv).dot(n).min(1.0);
+    let r_out_perp = etai_over_etat * (uv + cos_theta * n);
+    let r_out_parallel: DVec3 =
+        -((1.0 - r_out_perp.length_squared()).abs()).sqrt()
+            * n;
+    return r_out_perp + r_out_parallel;
 }
