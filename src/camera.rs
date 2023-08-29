@@ -131,10 +131,7 @@ impl Camera {
                     .into_iter()
                     .map(|_| {
                         self.get_ray(x as i32, y as i32)
-                            .color(
-                                self.max_depth as i32,
-                                &world,
-                            )
+                            .color(self.max_depth, &world)
                     })
                     .sum::<DVec3>()
                     * scale_factor;

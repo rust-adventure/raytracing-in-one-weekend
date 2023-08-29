@@ -22,7 +22,7 @@ impl Material {
     pub fn scatter(
         &self,
         r_in: &Ray,
-        hit_record: HitRecord,
+        hit_record: &HitRecord,
     ) -> Option<Scattered> {
         match self {
             Material::Lambertian { albedo } => {
