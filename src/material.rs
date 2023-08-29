@@ -1,3 +1,5 @@
+use std::ops::Neg;
+
 use crate::{hittable::HitRecord, ray::Ray};
 use glam::DVec3;
 
@@ -31,21 +33,18 @@ impl Material {
                     + random_unit_vector();
 
                 // Catch degenerate scatter direction
-                if scatter_direction.abs_diff_eq(
-                    DVec3::new(0., 0., 0.),
-                    1e-8,
-                ) {
+                if scatter_direction
+                    .abs_diff_eq(DVec3::ZERO, 1e-8)
+                {
                     scatter_direction = hit_record.normal;
                 }
 
-                let scattered = Ray {
-                    origin: hit_record.point,
-                    direction: scatter_direction,
-                };
-
                 Some(Scattered {
                     attenuation: *albedo,
-                    scattered,
+                    scattered: Ray {
+                        origin: hit_record.point,
+                        direction: scatter_direction,
+                    },
                 })
             }
             Material::Metal { albedo, fuzz } => {
@@ -88,9 +87,10 @@ impl Material {
                 let unit_direction =
                     r_in.direction.normalize();
 
-                let cos_theta = (-unit_direction
-                    .dot(hit_record.normal))
-                .min(1.0);
+                let cos_theta = unit_direction
+                    .dot(hit_record.normal)
+                    .neg()
+                    .min(1.0);
                 let sin_theta =
                     (1.0 - cos_theta * cos_theta).sqrt();
 
