@@ -12,13 +12,13 @@ fn main() -> io::Result<()> {
 
     let mut world = vec![];
 
-    world.push(Sphere {
-        center: DVec3::new(0., -1000., 0.),
-        radius: 1000.,
-        material: Material::Lambertian {
+    world.push(Sphere::new(
+        DVec3::new(0., -1000., 0.),
+        1000.,
+        Material::Lambertian {
             albedo: DVec3::new(0.5, 0.5, 0.5),
         },
-    });
+    ));
 
     for (a, b) in
         (-11..11).cartesian_product(-11..11).into_iter()
@@ -61,38 +61,34 @@ fn main() -> io::Result<()> {
                 }
             };
 
-            world.push(Sphere {
-                center,
-                radius: 0.2,
-                material,
-            });
+            world.push(Sphere::new(center, 0.2, material));
         }
     }
 
-    world.push(Sphere {
-        center: DVec3::new(0., 1., 0.),
-        radius: 1.0,
-        material: Material::Dielectric {
+    world.push(Sphere::new(
+        DVec3::new(0., 1., 0.),
+        1.0,
+        Material::Dielectric {
             index_of_refraction: 1.5,
         },
-    });
+    ));
 
-    world.push(Sphere {
-        center: DVec3::new(-4., 1., 0.),
-        radius: 1.0,
-        material: Material::Lambertian {
+    world.push(Sphere::new(
+        DVec3::new(-4., 1., 0.),
+        1.0,
+        Material::Lambertian {
             albedo: DVec3::new(0.4, 0.2, 0.1),
         },
-    });
+    ));
 
-    world.push(Sphere {
-        center: DVec3::new(4., 1., 0.),
-        radius: 1.0,
-        material: Material::Metal {
+    world.push(Sphere::new(
+        DVec3::new(4., 1., 0.),
+        1.0,
+        Material::Metal {
             albedo: DVec3::new(0.7, 0.6, 0.5),
             fuzz: 0.0,
         },
-    });
+    ));
 
     let camera = Camera::init()
         .image_width(400)

@@ -5,6 +5,17 @@ use crate::{hittable::Hittable, material::Scattered};
 pub struct Ray {
     pub origin: DVec3,
     pub direction: DVec3,
+    pub time: f64,
+}
+
+impl Default for Ray {
+    fn default() -> Self {
+        Self {
+            origin: Default::default(),
+            direction: Default::default(),
+            time: Default::default(),
+        }
+    }
 }
 
 impl Ray {

@@ -2,9 +2,8 @@ use glam::DVec3;
 use itertools::Itertools;
 use rand::prelude::*;
 use raytracer::{
-    camera::Camera,
-    material::Material,
-    shapes::{self, a_box, sphere::Sphere, Shapes},
+    camera::Camera, material::Material,
+    shapes::sphere::Sphere,
 };
 use std::io;
 
@@ -13,13 +12,13 @@ fn main() -> io::Result<()> {
 
     let mut world = vec![];
 
-    world.push(Shapes::Sphere(Sphere::new(
+    world.push(Sphere::new(
         DVec3::new(0., -1000., 0.),
         1000.,
         Material::Lambertian {
             albedo: DVec3::new(0.5, 0.5, 0.5),
         },
-    )));
+    ));
 
     for (a, b) in
         (-11..11).cartesian_product(-11..11).into_iter()
@@ -33,7 +32,7 @@ fn main() -> io::Result<()> {
 
         if (center - DVec3::new(4., 0.2, 0.)).length() > 0.9
         {
-            let material = if choose_mat < 0.8 {
+            if choose_mat < 0.8 {
                 // diffuse
                 let albedo = DVec3::new(
                     rng.gen_range(0f64..1.),
@@ -44,7 +43,18 @@ fn main() -> io::Result<()> {
                     rng.gen_range(0f64..1.),
                     rng.gen_range(0f64..1.),
                 );
-                Material::Lambertian { albedo: albedo }
+                let material =
+                    Material::Lambertian { albedo: albedo };
+                let center2 = center
+                    + DVec3::new(
+                        0.,
+                        rng.gen_range(0f64..0.5),
+                        0.,
+                    );
+                world.push(
+                    Sphere::new(center, 0.2, material)
+                        .with_move_to(center2),
+                );
             } else if choose_mat < 0.95 {
                 // metal
                 let albedo = DVec3::new(
@@ -54,57 +64,50 @@ fn main() -> io::Result<()> {
                 );
                 let fuzz = rng.gen_range(0f64..0.5);
 
-                Material::Metal { albedo, fuzz }
+                let material =
+                    Material::Metal { albedo, fuzz };
+                world.push(Sphere::new(
+                    center, 0.2, material,
+                ));
             } else {
                 // glass
-                Material::Dielectric {
+                let material = Material::Dielectric {
                     index_of_refraction: 1.5,
-                }
+                };
+                world.push(Sphere::new(
+                    center, 0.2, material,
+                ));
             };
-
-            // if choose_mat % 0.2 == 0. {
-            // world.push(Shapes::Sphere(Sphere {
-            //     center,
-            //     radius: 0.2,
-            //     material,
-            // }));
-            // } else {
-            world.push(Shapes::Box(a_box::Box {
-                center,
-                size: DVec3::splat(0.2),
-                material,
-            }))
-            // }
         }
     }
 
-    world.push(Shapes::Sphere(Sphere::new(
+    world.push(Sphere::new(
         DVec3::new(0., 1., 0.),
         1.0,
         Material::Dielectric {
             index_of_refraction: 1.5,
         },
-    )));
+    ));
 
-    world.push(Shapes::Sphere(Sphere::new(
+    world.push(Sphere::new(
         DVec3::new(-4., 1., 0.),
         1.0,
         Material::Lambertian {
             albedo: DVec3::new(0.4, 0.2, 0.1),
         },
-    )));
+    ));
 
-    world.push(Shapes::Sphere(Sphere::new(
+    world.push(Sphere::new(
         DVec3::new(4., 1., 0.),
         1.0,
         Material::Metal {
             albedo: DVec3::new(0.7, 0.6, 0.5),
             fuzz: 0.0,
         },
-    )));
+    ));
 
     let camera = Camera::init()
-        .image_width(400)
+        .image_width(800)
         .aspect_ratio(16.0 / 9.0)
         .look_from(DVec3::new(13., 2., 3.))
         .look_at(DVec3::ZERO)
@@ -116,10 +119,7 @@ fn main() -> io::Result<()> {
         .vfov(20.)
         .build();
 
-    camera.render_to_disk(
-        "raytracing-in-one-weekend-final-scene-more",
-        world,
-    )?;
+    camera.render_to_disk("week-motion-blur", world)?;
 
     Ok(())
 }

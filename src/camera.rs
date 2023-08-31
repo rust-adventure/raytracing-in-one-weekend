@@ -70,6 +70,7 @@ impl Camera {
     }
 
     fn get_ray(&self, i: i32, j: i32) -> Ray {
+        let mut rng = rand::thread_rng();
         // Get a randomly sampled camera ray for the pixel at location i,j.
 
         let pixel_center = self.pixel00_loc
@@ -86,9 +87,11 @@ impl Camera {
 
         let ray_direction = pixel_sample - ray_origin;
 
+        let ray_time = rng.gen();
         Ray {
             origin: self.center,
             direction: ray_direction,
+            time: ray_time,
         }
     }
     fn defocus_disk_sample(&self) -> DVec3 {

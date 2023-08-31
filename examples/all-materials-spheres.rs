@@ -22,31 +22,31 @@ fn main() -> io::Result<()> {
         fuzz: 0.0,
     };
 
-    world.push(Sphere {
-        center: DVec3::new(0.0, -100.5, -1.0),
-        radius: 100.0,
-        material: material_ground,
-    });
-    world.push(Sphere {
-        center: DVec3::new(0.0, 0.0, -1.0),
-        radius: 0.5,
-        material: material_center,
-    });
-    world.push(Sphere {
-        center: DVec3::new(-1.0, 0.0, -1.0),
-        radius: 0.5,
-        material: material_left.clone(),
-    });
-    world.push(Sphere {
-        center: DVec3::new(-1.0, 0.0, -1.0),
-        radius: -0.4,
-        material: material_left,
-    });
-    world.push(Sphere {
-        center: DVec3::new(1.0, 0.0, -1.0),
-        radius: 0.5,
-        material: material_right,
-    });
+    world.push(Sphere::new(
+        DVec3::new(0.0, -100.5, -1.0),
+        100.0,
+        material_ground,
+    ));
+    world.push(Sphere::new(
+        DVec3::new(0.0, 0.0, -1.0),
+        0.5,
+        material_center,
+    ));
+    world.push(Sphere::new(
+        DVec3::new(-1.0, 0.0, -1.0),
+        0.5,
+        material_left.clone(),
+    ));
+    world.push(Sphere::new(
+        DVec3::new(-1.0, 0.0, -1.0),
+        -0.4,
+        material_left,
+    ));
+    world.push(Sphere::new(
+        DVec3::new(1.0, 0.0, -1.0),
+        0.5,
+        material_right,
+    ));
 
     let camera = Camera::init()
         .image_width(800)

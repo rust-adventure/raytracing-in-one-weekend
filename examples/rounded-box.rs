@@ -18,11 +18,11 @@ fn main() -> io::Result<()> {
         albedo: DVec3::new(0.1, 0.2, 0.5),
     };
 
-    world.push(Shapes::Sphere(Sphere {
-        center: DVec3::new(0.0, -100.5, -1.0),
-        radius: 100.0,
-        material: material_ground,
-    }));
+    world.push(Shapes::Sphere(Sphere::new(
+        DVec3::new(0.0, -100.5, -1.0),
+        100.0,
+        material_ground,
+    )));
     world.push(Shapes::RoundedBox(RoundedBox {
         center: DVec3::new(0.0, 0.0, -1.0),
         radius: 0.2,

@@ -25,26 +25,26 @@ fn main() -> io::Result<()> {
         fuzz: 0.0,
     };
 
-    world.push(Shapes::Sphere(Sphere {
-        center: DVec3::new(0.0, -100.5, -1.0),
-        radius: 100.0,
-        material: material_ground,
-    }));
+    world.push(Shapes::Sphere(Sphere::new(
+        DVec3::new(0.0, -100.5, -1.0),
+        100.0,
+        material_ground,
+    )));
     world.push(Shapes::Box(a_box::Box {
         center: DVec3::new(0.0, 0.0, -1.0),
         size: DVec3::splat(0.2),
         material: material_center,
     }));
-    world.push(Shapes::Sphere(Sphere {
-        center: DVec3::new(-1.0, 0.0, -1.0),
-        radius: 0.5,
-        material: material_left.clone(),
-    }));
-    world.push(Shapes::Sphere(Sphere {
-        center: DVec3::new(-1.0, 0.0, -1.0),
-        radius: -0.4,
-        material: material_left,
-    }));
+    world.push(Shapes::Sphere(Sphere::new(
+        DVec3::new(-1.0, 0.0, -1.0),
+        0.5,
+        material_left.clone(),
+    )));
+    world.push(Shapes::Sphere(Sphere::new(
+        DVec3::new(-1.0, 0.0, -1.0),
+        -0.4,
+        material_left,
+    )));
     world.push(Shapes::Cylinder(Cylinder {
         start: DVec3::splat(-1.),
         end: DVec3::splat(-2.),

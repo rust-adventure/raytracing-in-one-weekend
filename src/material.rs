@@ -44,6 +44,7 @@ impl Material {
                     scattered: Ray {
                         origin: hit_record.point,
                         direction: scatter_direction,
+                        time: r_in.time,
                     },
                 })
             }
@@ -56,6 +57,7 @@ impl Material {
                     origin: hit_record.point,
                     direction: reflected
                         + *fuzz * random_unit_vector(),
+                    time: r_in.time,
                 };
                 // absorb any scatter that is below the surface
                 if scattered
@@ -120,6 +122,7 @@ impl Material {
                     scattered: Ray {
                         origin: hit_record.point,
                         direction: direction,
+                        time: r_in.time,
                     },
                 })
             }
