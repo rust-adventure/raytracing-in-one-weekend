@@ -95,7 +95,7 @@ fn main() -> io::Result<()> {
     });
 
     let camera = Camera::init()
-        .image_width(1200)
+        .image_width(400)
         .aspect_ratio(16.0 / 9.0)
         .look_from(DVec3::new(13., 2., 3.))
         .look_at(DVec3::ZERO)
@@ -104,9 +104,13 @@ fn main() -> io::Result<()> {
         .defocus_angle(0.0)
         .samples_per_pixel(500)
         .max_depth(50)
+        .vfov(20.)
         .build();
 
-    camera.render_to_disk(world)?;
+    camera.render_to_disk(
+        "raytracing-in-one-weekend-final-scene",
+        world,
+    )?;
 
     Ok(())
 }

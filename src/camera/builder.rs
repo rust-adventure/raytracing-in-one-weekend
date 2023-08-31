@@ -12,6 +12,7 @@ pub struct CameraBuilder {
     defocus_angle: f64,
     samples_per_pixel: u32,
     max_depth: u32,
+    vfov: f64,
 }
 impl Default for CameraBuilder {
     fn default() -> Self {
@@ -25,6 +26,7 @@ impl Default for CameraBuilder {
             defocus_angle: 0.,
             samples_per_pixel: 100,
             max_depth: 50,
+            vfov: 20.,
         }
     }
 }
@@ -90,14 +92,17 @@ impl CameraBuilder {
         self.max_depth = max_depth;
         self
     }
+    pub fn vfov(mut self, vfov: f64) -> CameraBuilder {
+        self.vfov = vfov;
+        self
+    }
     pub fn build(self) -> Camera {
         let max_value: u8 = 255;
         let image_height: u32 = (self.image_width as f64
             / self.aspect_ratio)
             as u32;
 
-        let vfov: f64 = 20.0;
-        let theta = vfov.to_radians();
+        let theta = self.vfov.to_radians();
         let h = (theta / 2.).tan();
 
         let viewport_height = 2. * h * self.focus_dist;
@@ -153,7 +158,7 @@ impl CameraBuilder {
             pixel00_loc,
             samples_per_pixel: self.samples_per_pixel,
             max_depth: self.max_depth,
-            vfov,
+            vfov: self.vfov,
             lookfrom: self.look_from,
             lookat: self.look_at,
             vup: self.vup,

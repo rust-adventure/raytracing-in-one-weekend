@@ -109,6 +109,7 @@ impl Camera {
     }
     pub fn render_to_disk<T>(
         &self,
+        filename: &str,
         world: T,
     ) -> io::Result<()>
     where
@@ -160,7 +161,7 @@ impl Camera {
             .collect::<Vec<String>>()
             .join("\n");
         fs::write(
-            "output.ppm",
+            format!("{filename}.ppm"),
             format!(
                 "P3
 {} {}
