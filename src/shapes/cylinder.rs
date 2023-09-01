@@ -81,6 +81,10 @@ impl Hittable for Cylinder {
             return None;
         }
     }
+
+    fn bounding_box(&self) -> crate::hittable::aabb::Aabb {
+        todo!()
+    }
 }
 
 // float iCylinder( in vec3 ro, in vec3 rd, in vec2 distBound, inout vec3 normal,

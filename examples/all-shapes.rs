@@ -65,7 +65,7 @@ fn main() -> io::Result<()> {
         .vfov(90.)
         .build();
 
-    camera.render_to_disk("all-shapes", world)?;
+    camera.render_to_disk("all-shapes", &*world)?;
 
     Ok(())
 }

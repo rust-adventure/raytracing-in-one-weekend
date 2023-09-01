@@ -166,6 +166,10 @@ impl Hittable for RoundedBox {
             return None;
         };
     }
+
+    fn bounding_box(&self) -> crate::hittable::aabb::Aabb {
+        todo!()
+    }
 }
 // impl Hittable for RoundedBox {
 //     fn hit(

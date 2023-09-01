@@ -105,7 +105,7 @@ fn main() -> io::Result<()> {
 
     camera.render_to_disk(
         "raytracing-in-one-weekend-final-scene",
-        world,
+        &*world,
     )?;
 
     Ok(())

@@ -35,4 +35,53 @@ impl Hittable for Shapes {
             }
         }
     }
+
+    fn bounding_box(&self) -> crate::hittable::aabb::Aabb {
+        match self {
+            Shapes::Sphere(object) => object.bounding_box(),
+            Shapes::RoundedBox(object) => {
+                object.bounding_box()
+            }
+            Shapes::Box(object) => object.bounding_box(),
+            Shapes::Cylinder(object) => {
+                object.bounding_box()
+            }
+        }
+    }
+}
+
+impl Hittable for &Shapes {
+    fn hit(
+        &self,
+        ray: &crate::ray::Ray,
+        interval: std::ops::Range<f64>,
+    ) -> Option<crate::hittable::HitRecord> {
+        match self {
+            Shapes::Sphere(object) => {
+                object.hit(ray, interval)
+            }
+            Shapes::RoundedBox(object) => {
+                object.hit(ray, interval)
+            }
+            Shapes::Box(object) => {
+                object.hit(ray, interval)
+            }
+            Shapes::Cylinder(object) => {
+                object.hit(ray, interval)
+            }
+        }
+    }
+
+    fn bounding_box(&self) -> crate::hittable::aabb::Aabb {
+        match self {
+            Shapes::Sphere(object) => object.bounding_box(),
+            Shapes::RoundedBox(object) => {
+                object.bounding_box()
+            }
+            Shapes::Box(object) => object.bounding_box(),
+            Shapes::Cylinder(object) => {
+                object.bounding_box()
+            }
+        }
+    }
 }

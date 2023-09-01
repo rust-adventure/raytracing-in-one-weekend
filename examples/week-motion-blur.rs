@@ -2,8 +2,10 @@ use glam::DVec3;
 use itertools::Itertools;
 use rand::prelude::*;
 use raytracer::{
-    camera::Camera, material::Material,
-    shapes::sphere::Sphere,
+    camera::Camera,
+    material::Material,
+    shapes::{sphere::Sphere, Shapes},
+    BvhNode,
 };
 use std::io;
 
@@ -12,13 +14,13 @@ fn main() -> io::Result<()> {
 
     let mut world = vec![];
 
-    world.push(Sphere::new(
+    world.push(Shapes::Sphere(Sphere::new(
         DVec3::new(0., -1000., 0.),
         1000.,
         Material::Lambertian {
             albedo: DVec3::new(0.5, 0.5, 0.5),
         },
-    ));
+    )));
 
     for (a, b) in
         (-11..11).cartesian_product(-11..11).into_iter()
@@ -51,10 +53,10 @@ fn main() -> io::Result<()> {
                         rng.gen_range(0f64..0.5),
                         0.,
                     );
-                world.push(
+                world.push(Shapes::Sphere(
                     Sphere::new(center, 0.2, material)
                         .with_move_to(center2),
-                );
+                ));
             } else if choose_mat < 0.95 {
                 // metal
                 let albedo = DVec3::new(
@@ -66,45 +68,45 @@ fn main() -> io::Result<()> {
 
                 let material =
                     Material::Metal { albedo, fuzz };
-                world.push(Sphere::new(
+                world.push(Shapes::Sphere(Sphere::new(
                     center, 0.2, material,
-                ));
+                )));
             } else {
                 // glass
                 let material = Material::Dielectric {
                     index_of_refraction: 1.5,
                 };
-                world.push(Sphere::new(
+                world.push(Shapes::Sphere(Sphere::new(
                     center, 0.2, material,
-                ));
+                )));
             };
         }
     }
 
-    world.push(Sphere::new(
+    world.push(Shapes::Sphere(Sphere::new(
         DVec3::new(0., 1., 0.),
         1.0,
         Material::Dielectric {
             index_of_refraction: 1.5,
         },
-    ));
+    )));
 
-    world.push(Sphere::new(
+    world.push(Shapes::Sphere(Sphere::new(
         DVec3::new(-4., 1., 0.),
         1.0,
         Material::Lambertian {
             albedo: DVec3::new(0.4, 0.2, 0.1),
         },
-    ));
+    )));
 
-    world.push(Sphere::new(
+    world.push(Shapes::Sphere(Sphere::new(
         DVec3::new(4., 1., 0.),
         1.0,
         Material::Metal {
             albedo: DVec3::new(0.7, 0.6, 0.5),
             fuzz: 0.0,
         },
-    ));
+    )));
 
     let camera = Camera::init()
         .image_width(800)
@@ -119,7 +121,10 @@ fn main() -> io::Result<()> {
         .vfov(20.)
         .build();
 
-    camera.render_to_disk("week-motion-blur", world)?;
+    camera.render_to_disk(
+        "week-motion-blur",
+        BvhNode::from_objects_raw(world),
+    )?;
 
     Ok(())
 }

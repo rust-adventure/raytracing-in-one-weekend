@@ -61,7 +61,7 @@ fn main() -> io::Result<()> {
         .build();
 
     camera
-        .render_to_disk("all-materials-spheres", world)?;
+        .render_to_disk("all-materials-spheres", &*world)?;
 
     Ok(())
 }

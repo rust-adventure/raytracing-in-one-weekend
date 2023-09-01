@@ -3,7 +3,7 @@ use std::ops::Range;
 use glam::DVec3;
 
 use crate::{
-    hittable::{HitRecord, Hittable},
+    hittable::{aabb::Aabb, HitRecord, Hittable},
     material::Material,
     ray::Ray,
 };
@@ -19,37 +19,39 @@ pub struct Sphere {
     radius: f64,
     material: Material,
     move_to: Option<DVec3>,
+    bbox: Aabb,
 }
 
-impl Default for Sphere {
-    fn default() -> Self {
-        Self {
-            center: Default::default(),
-            radius: Default::default(),
-            material: Material::Lambertian {
-                albedo: DVec3::new(0.0, 1., 1.),
-            },
-            move_to: None,
-        }
-    }
-}
 impl Sphere {
     pub fn new(
         center: DVec3,
         radius: f64,
         material: Material,
     ) -> Self {
+        let rvec = DVec3::splat(radius);
+        let bbox =
+            Aabb::from((center - rvec, center + rvec));
+
         Self {
             center,
             radius,
             material,
             move_to: None,
+            bbox,
         }
     }
     pub fn with_move_to(mut self, to: DVec3) -> Self {
+        let rvec = DVec3::splat(self.radius);
+        let box1 = Aabb::from((
+            self.center - rvec,
+            self.center + rvec,
+        ));
+        let box2 = Aabb::from((to - rvec, to + rvec));
+        let bbox = Aabb::from((box1, box2));
         // the raytracing series has this odd constructor that pre-calculates
         // a value, then stores it.
         self.move_to = Some(to - self.center);
+        self.bbox = bbox;
         self
     }
     fn center(&self, time: f64) -> DVec3 {
@@ -104,5 +106,9 @@ impl Hittable for Sphere {
         );
 
         Some(rec)
+    }
+
+    fn bounding_box(&self) -> crate::hittable::aabb::Aabb {
+        self.bbox.clone()
     }
 }

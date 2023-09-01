@@ -74,6 +74,10 @@ impl Hittable for Box {
 
         // Some(rec)
     }
+
+    fn bounding_box(&self) -> crate::hittable::aabb::Aabb {
+        todo!()
+    }
 }
 
 fn step(edge: DVec3, x: DVec3) -> DVec3 {

@@ -42,7 +42,7 @@ fn main() -> io::Result<()> {
         .max_depth(50)
         .build();
 
-    camera.render_to_disk("rounded-box", world)?;
+    camera.render_to_disk("rounded-box", &*world)?;
 
     Ok(())
 }

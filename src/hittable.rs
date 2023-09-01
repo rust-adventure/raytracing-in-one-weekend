@@ -2,19 +2,23 @@ use crate::{material::Material, ray::Ray};
 use glam::DVec3;
 use std::ops::Range;
 
+use self::aabb::Aabb;
+pub mod aabb;
+
 pub trait Hittable {
     fn hit(
         &self,
         ray: &Ray,
         interval: Range<f64>,
     ) -> Option<HitRecord>;
+    fn bounding_box(&self) -> aabb::Aabb;
 }
 
 #[derive(Clone)]
 pub struct HitRecord {
     pub point: DVec3,
     pub normal: DVec3,
-    t: f64,
+    pub t: f64,
     pub front_face: bool,
     pub material: Material,
 }
@@ -65,7 +69,7 @@ impl HitRecord {
     }
 }
 
-impl<T> Hittable for Vec<T>
+impl<T> Hittable for &[T]
 where
     T: Hittable + Sync,
 {
@@ -88,5 +92,16 @@ where
         );
 
         hit_record
+    }
+
+    fn bounding_box(&self) -> aabb::Aabb {
+        self.iter()
+            .map(|object| object.bounding_box())
+            .reduce(|acc, item| Aabb::from((acc, item)))
+            .unwrap_or(Aabb {
+                x: 0f64..0.,
+                y: 0f64..0.,
+                z: 0f64..0.,
+            })
     }
 }
