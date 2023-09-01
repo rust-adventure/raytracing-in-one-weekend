@@ -57,6 +57,7 @@ pub struct Camera {
     defocus_disk_u: DVec3,
     /// Defocus disk vertical radius
     defocus_disk_v: DVec3,
+    background: Option<DVec3>,
 }
 
 impl Default for Camera {
@@ -135,7 +136,11 @@ impl Camera {
                     .into_iter()
                     .map(|_| {
                         self.get_ray(x as i32, y as i32)
-                            .color(self.max_depth, &world)
+                            .color(
+                                self.max_depth,
+                                &world,
+                                &self.background,
+                            )
                     })
                     .sum::<DVec3>()
                     * scale_factor;

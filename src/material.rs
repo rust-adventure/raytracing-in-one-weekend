@@ -17,6 +17,7 @@ pub enum Material {
     Lambertian { albedo: Texture },
     Metal { albedo: DVec3, fuzz: f64 },
     Dielectric { index_of_refraction: f64 },
+    DiffuseLight(Texture),
 }
 pub struct Scattered {
     pub attenuation: DVec3,
@@ -132,6 +133,20 @@ impl Material {
                     },
                 })
             }
+            Material::DiffuseLight(texture) => None,
+        }
+    }
+    pub fn emitted(
+        &self,
+        u: f64,
+        v: f64,
+        point: DVec3,
+    ) -> DVec3 {
+        match self {
+            Material::DiffuseLight(texture) => {
+                texture.color(u, v, point)
+            }
+            _ => DVec3::ZERO,
         }
     }
 }

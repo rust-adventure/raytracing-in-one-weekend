@@ -70,6 +70,7 @@ fn main() -> io::Result<()> {
         .samples_per_pixel(500)
         .max_depth(50)
         .vfov(80.)
+        // .background(DVec3::new(0.70, 0.80, 1.00))
         .build();
 
     let filename = Path::new(file!())

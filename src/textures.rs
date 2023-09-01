@@ -79,7 +79,9 @@ impl Texture {
             Texture::PerlinNoise(noise, freq) => {
                 DVec3::ONE
                     * noise.get(
-                        (point * *freq).xyz().to_array(),
+                        ((point * *freq) + 1.0 / 2.0)
+                            .xyz()
+                            .to_array(),
                     )
             }
             Texture::Turbulence(perlin) => {

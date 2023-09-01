@@ -13,6 +13,7 @@ pub struct CameraBuilder {
     samples_per_pixel: u32,
     max_depth: u32,
     vfov: f64,
+    background: Option<DVec3>,
 }
 impl Default for CameraBuilder {
     fn default() -> Self {
@@ -27,6 +28,7 @@ impl Default for CameraBuilder {
             samples_per_pixel: 100,
             max_depth: 50,
             vfov: 20.,
+            background: None,
         }
     }
 }
@@ -94,6 +96,13 @@ impl CameraBuilder {
     }
     pub fn vfov(mut self, vfov: f64) -> CameraBuilder {
         self.vfov = vfov;
+        self
+    }
+    pub fn background(
+        mut self,
+        bg: DVec3,
+    ) -> CameraBuilder {
+        self.background = Some(bg);
         self
     }
     pub fn build(self) -> Camera {
@@ -169,6 +178,7 @@ impl CameraBuilder {
             focus_dist: self.focus_dist,
             defocus_disk_u,
             defocus_disk_v,
+            background: self.background,
         }
     }
 }

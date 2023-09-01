@@ -22,7 +22,12 @@ impl Ray {
     pub fn at(&self, t: f64) -> DVec3 {
         self.origin + t * self.direction
     }
-    pub fn color<T>(&self, depth: u32, world: &T) -> DVec3
+    pub fn color<T>(
+        &self,
+        depth: u32,
+        world: &T,
+        miss_color: &Option<DVec3>,
+    ) -> DVec3
     where
         T: Hittable + std::marker::Sync,
     {
@@ -34,6 +39,9 @@ impl Ray {
         if let Some(rec) =
             world.hit(&self, (0.001)..f64::INFINITY)
         {
+            let color_from_emission = rec
+                .material
+                .emitted(rec.u, rec.v, rec.point);
             // scatter rays on the material we hit IF
             // the material wants to scatter them.
             // the material is allowed to absorb rays by
@@ -43,17 +51,26 @@ impl Ray {
                 scattered,
             }) = rec.material.scatter(self, &rec)
             else {
-                return DVec3::ZERO;
+                return color_from_emission;
             };
 
             // recurse to follow more bounces
-            return attenuation
-                * scattered.color(depth - 1, world);
+            let color_from_scatter = attenuation
+                * scattered.color(
+                    depth - 1,
+                    world,
+                    miss_color,
+                );
+            return color_from_emission
+                + color_from_scatter;
         }
 
-        // this is sky because we missed everything
-        let a = 0.5 * (self.direction.normalize().y + 1.0);
-        return (1.0 - a) * DVec3::new(1.0, 1.0, 1.0)
-            + a * DVec3::new(0.5, 0.7, 1.0);
+        miss_color.unwrap_or_else(|| {
+            // this is sky because we missed everything
+            let a =
+                0.5 * (self.direction.normalize().y + 1.0);
+            return (1.0 - a) * DVec3::new(1.0, 1.0, 1.0)
+                + a * DVec3::new(0.5, 0.7, 1.0);
+        })
     }
 }
