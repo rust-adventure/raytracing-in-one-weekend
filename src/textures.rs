@@ -1,11 +1,26 @@
+use std::{io, path::Path};
+
 use glam::DVec3;
+use image::{DynamicImage, GenericImageView};
 
 #[derive(Clone)]
 pub enum Texture {
     SolidColor(DVec3),
     Checkered { even: DVec3, odd: DVec3, scale: f64 },
+    Image(DynamicImage),
 }
 impl Texture {
+    pub fn load_image<P>(path: P) -> io::Result<Self>
+    where
+        P: AsRef<Path>,
+    {
+        use image::io::Reader as ImageReader;
+
+        let img =
+            ImageReader::open(path)?.decode().unwrap();
+
+        Ok(Self::Image(img))
+    }
     pub fn color(
         &self,
         u: f64,
@@ -34,6 +49,29 @@ impl Texture {
                 } else {
                     *odd
                 }
+            }
+            Texture::Image(image) => {
+                // If we have no texture data, then return solid cyan as a debugging aid.
+                if image.height() <= 0 {
+                    return DVec3::new(0., 1., 1.);
+                }
+                // Clamp input texture coordinates to [0,1] x [1,0]
+                let u = u.clamp(0.0, 1.0);
+                let v = 1.0 - v.clamp(0.0, 1.0); // Flip V to image coordinates
+
+                let i: u32 =
+                    (u * image.width() as f64) as u32;
+                let j: u32 =
+                    (v * image.height() as f64) as u32;
+
+                let pixel = image.get_pixel(i, j);
+
+                let color_scale = 1.0 / 255.0;
+                return DVec3::new(
+                    color_scale * pixel[0] as f64,
+                    color_scale * pixel[1] as f64,
+                    color_scale * pixel[2] as f64,
+                );
             }
         }
     }
