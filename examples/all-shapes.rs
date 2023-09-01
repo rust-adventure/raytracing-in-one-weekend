@@ -3,7 +3,8 @@ use raytracer::{
     camera::Camera,
     material::Material,
     shapes::{
-        a_box, cylinder::Cylinder, sphere::Sphere, Shapes,
+        /* a_box, cylinder::Cylinder,*/
+        sphere::Sphere, Shapes,
     },
 };
 use std::io;
@@ -12,10 +13,10 @@ fn main() -> io::Result<()> {
     let mut world = vec![];
 
     let material_ground = Material::Lambertian {
-        albedo: DVec3::new(0.8, 0.8, 0.0),
+        albedo: DVec3::new(0.8, 0.8, 0.0).into(),
     };
     let material_center = Material::Lambertian {
-        albedo: DVec3::new(0.1, 0.2, 0.5),
+        albedo: DVec3::new(0.1, 0.2, 0.5).into(),
     };
     let material_left = Material::Dielectric {
         index_of_refraction: 1.5,
@@ -30,11 +31,11 @@ fn main() -> io::Result<()> {
         100.0,
         material_ground,
     )));
-    world.push(Shapes::Box(a_box::Box {
-        center: DVec3::new(0.0, 0.0, -1.0),
-        size: DVec3::splat(0.2),
-        material: material_center,
-    }));
+    // world.push(Shapes::Box(a_box::Box {
+    //     center: DVec3::new(0.0, 0.0, -1.0),
+    //     size: DVec3::splat(0.2),
+    //     material: material_center,
+    // }));
     world.push(Shapes::Sphere(Sphere::new(
         DVec3::new(-1.0, 0.0, -1.0),
         0.5,
@@ -45,12 +46,12 @@ fn main() -> io::Result<()> {
         -0.4,
         material_left,
     )));
-    world.push(Shapes::Cylinder(Cylinder {
-        start: DVec3::splat(-1.),
-        end: DVec3::splat(-2.),
-        radius: 0.5,
-        material: material_right,
-    }));
+    // world.push(Shapes::Cylinder(Cylinder {
+    //     start: DVec3::splat(-1.),
+    //     end: DVec3::splat(-2.),
+    //     radius: 0.5,
+    //     material: material_right,
+    // }));
 
     let camera = Camera::init()
         .image_width(800)

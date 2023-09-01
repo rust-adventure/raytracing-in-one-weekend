@@ -3,7 +3,7 @@ use itertools::Itertools;
 use rand::prelude::*;
 use raytracer::{
     camera::Camera, material::Material,
-    shapes::sphere::Sphere,
+    shapes::sphere::Sphere, textures::Texture,
 };
 use std::io;
 
@@ -11,13 +11,17 @@ fn main() -> io::Result<()> {
     let mut rng = rand::thread_rng();
 
     let mut world = vec![];
+    // (0.32, color(.2, .3, .1), color(.9, .9, .9))
+    let checker = Texture::Checkered {
+        even: DVec3::new(0.2, 0.3, 0.1),
+        odd: DVec3::splat(0.9),
+        scale: 0.32,
+    };
 
     world.push(Sphere::new(
         DVec3::new(0., -1000., 0.),
         1000.,
-        Material::Lambertian {
-            albedo: DVec3::new(0.5, 0.5, 0.5),
-        },
+        Material::Lambertian { albedo: checker },
     ));
 
     for (a, b) in
@@ -43,8 +47,9 @@ fn main() -> io::Result<()> {
                     rng.gen_range(0f64..1.),
                     rng.gen_range(0f64..1.),
                 );
-                let material =
-                    Material::Lambertian { albedo: albedo };
+                let material = Material::Lambertian {
+                    albedo: albedo.into(),
+                };
                 let center2 = center
                     + DVec3::new(
                         0.,
@@ -93,7 +98,7 @@ fn main() -> io::Result<()> {
         DVec3::new(-4., 1., 0.),
         1.0,
         Material::Lambertian {
-            albedo: DVec3::new(0.4, 0.2, 0.1),
+            albedo: DVec3::new(0.4, 0.2, 0.1).into(),
         },
     ));
 

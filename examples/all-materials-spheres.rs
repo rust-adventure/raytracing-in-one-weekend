@@ -9,10 +9,10 @@ fn main() -> io::Result<()> {
     let mut world = vec![];
 
     let material_ground = Material::Lambertian {
-        albedo: DVec3::new(0.8, 0.8, 0.0),
+        albedo: DVec3::new(0.8, 0.8, 0.0).into(),
     };
     let material_center = Material::Lambertian {
-        albedo: DVec3::new(0.1, 0.2, 0.5),
+        albedo: DVec3::new(0.1, 0.2, 0.5).into(),
     };
     let material_left = Material::Dielectric {
         index_of_refraction: 1.5,

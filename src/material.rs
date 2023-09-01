@@ -1,6 +1,8 @@
 use std::ops::Neg;
 
-use crate::{hittable::HitRecord, ray::Ray};
+use crate::{
+    hittable::HitRecord, ray::Ray, textures::Texture,
+};
 use glam::DVec3;
 
 use rand::Rng;
@@ -12,7 +14,7 @@ use vectors::*;
 #[non_exhaustive]
 #[derive(Clone)]
 pub enum Material {
-    Lambertian { albedo: DVec3 },
+    Lambertian { albedo: Texture },
     Metal { albedo: DVec3, fuzz: f64 },
     Dielectric { index_of_refraction: f64 },
 }
@@ -40,7 +42,11 @@ impl Material {
                 }
 
                 Some(Scattered {
-                    attenuation: *albedo,
+                    attenuation: albedo.color(
+                        hit_record.u,
+                        hit_record.v,
+                        hit_record.point,
+                    ),
                     scattered: Ray {
                         origin: hit_record.point,
                         direction: scatter_direction,

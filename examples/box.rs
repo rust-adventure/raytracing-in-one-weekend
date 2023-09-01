@@ -3,8 +3,8 @@ use raytracer::{
     camera::Camera,
     material::Material,
     shapes::{
-        a_box, rounded_box::RoundedBox, sphere::Sphere,
-        Shapes,
+        /* a_box, rounded_box::RoundedBox,*/
+        sphere::Sphere, Shapes,
     },
 };
 use std::io;
@@ -13,10 +13,10 @@ fn main() -> io::Result<()> {
     let mut world: Vec<Shapes> = vec![];
 
     let material_ground = Material::Lambertian {
-        albedo: DVec3::new(0.8, 0.8, 0.0),
+        albedo: DVec3::new(0.8, 0.8, 0.0).into(),
     };
     let material_center = Material::Lambertian {
-        albedo: DVec3::new(0.1, 0.2, 0.5),
+        albedo: DVec3::new(0.1, 0.2, 0.5).into(),
     };
 
     world.push(Shapes::Sphere(Sphere::new(
@@ -24,11 +24,11 @@ fn main() -> io::Result<()> {
         100.0,
         material_ground,
     )));
-    world.push(Shapes::Box(a_box::Box {
-        center: DVec3::new(3.0, 0.0, -1.0),
-        size: DVec3::ONE * 9.,
-        material: material_center,
-    }));
+    // world.push(Shapes::Box(a_box::Box {
+    //     center: DVec3::new(3.0, 0.0, -1.0),
+    //     size: DVec3::ONE * 9.,
+    //     material: material_center,
+    // }));
 
     let camera = Camera::init()
         .image_width(600)

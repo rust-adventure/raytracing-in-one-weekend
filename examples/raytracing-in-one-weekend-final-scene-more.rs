@@ -4,7 +4,7 @@ use rand::prelude::*;
 use raytracer::{
     camera::Camera,
     material::Material,
-    shapes::{self, a_box, sphere::Sphere, Shapes},
+    shapes::{self, /*a_box,*/ sphere::Sphere, Shapes,},
 };
 use std::io;
 
@@ -17,7 +17,7 @@ fn main() -> io::Result<()> {
         DVec3::new(0., -1000., 0.),
         1000.,
         Material::Lambertian {
-            albedo: DVec3::new(0.5, 0.5, 0.5),
+            albedo: DVec3::new(0.5, 0.5, 0.5).into(),
         },
     )));
 
@@ -44,7 +44,9 @@ fn main() -> io::Result<()> {
                     rng.gen_range(0f64..1.),
                     rng.gen_range(0f64..1.),
                 );
-                Material::Lambertian { albedo: albedo }
+                Material::Lambertian {
+                    albedo: albedo.into(),
+                }
             } else if choose_mat < 0.95 {
                 // metal
                 let albedo = DVec3::new(
@@ -69,11 +71,11 @@ fn main() -> io::Result<()> {
             //     material,
             // }));
             // } else {
-            world.push(Shapes::Box(a_box::Box {
-                center,
-                size: DVec3::splat(0.2),
-                material,
-            }))
+            // world.push(Shapes::Box(a_box::Box {
+            //     center,
+            //     size: DVec3::splat(0.2),
+            //     material,
+            // }))
             // }
         }
     }
@@ -90,7 +92,7 @@ fn main() -> io::Result<()> {
         DVec3::new(-4., 1., 0.),
         1.0,
         Material::Lambertian {
-            albedo: DVec3::new(0.4, 0.2, 0.1),
+            albedo: DVec3::new(0.4, 0.2, 0.1).into(),
         },
     )));
 

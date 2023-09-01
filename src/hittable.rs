@@ -17,6 +17,8 @@ pub struct HitRecord {
     t: f64,
     pub front_face: bool,
     pub material: Material,
+    pub u: f64,
+    pub v: f64,
 }
 impl HitRecord {
     pub fn with_face_normal(
@@ -25,6 +27,8 @@ impl HitRecord {
         outward_normal: DVec3,
         t: f64,
         ray: &Ray,
+        u: f64,
+        v: f64,
     ) -> Self {
         let (front_face, normal) =
             HitRecord::calc_face_normal(
@@ -37,6 +41,8 @@ impl HitRecord {
             normal,
             t,
             front_face,
+            u,
+            v,
         }
     }
     fn calc_face_normal(
