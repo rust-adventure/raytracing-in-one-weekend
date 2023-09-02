@@ -18,6 +18,7 @@ pub enum Material {
     Metal { albedo: DVec3, fuzz: f64 },
     Dielectric { index_of_refraction: f64 },
     DiffuseLight(Texture),
+    Isotropic { albedo: Texture },
 }
 pub struct Scattered {
     pub attenuation: DVec3,
@@ -133,7 +134,23 @@ impl Material {
                     },
                 })
             }
-            Material::DiffuseLight(texture) => None,
+            Material::DiffuseLight(_) => None,
+            Material::Isotropic { albedo } => {
+                let scattered = Ray {
+                    origin: hit_record.point,
+                    direction: random_unit_vector(),
+                    time: r_in.time,
+                };
+                let attenuation = albedo.color(
+                    hit_record.u,
+                    hit_record.v,
+                    hit_record.point,
+                );
+                Some(Scattered {
+                    attenuation,
+                    scattered,
+                })
+            }
         }
     }
     pub fn emitted(

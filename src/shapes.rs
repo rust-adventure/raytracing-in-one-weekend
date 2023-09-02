@@ -2,6 +2,7 @@ use glam::DVec3;
 
 use crate::{hittable::Hittable, ray::Ray};
 
+pub mod constant_medium;
 pub mod quad;
 pub mod quad_box;
 pub mod sphere;
@@ -24,6 +25,7 @@ pub enum Shapes {
         cos_theta: f64,
         object: Box<Shapes>,
     },
+    ConstantMedium(constant_medium::ConstantMedium),
     // RoundedBox(rounded_box::RoundedBox),
     // Box(a_box::Box),
     // Cylinder(cylinder::Cylinder),
@@ -127,6 +129,9 @@ impl Hittable for Shapes {
                 hit_record.normal = normal;
 
                 Some(hit_record)
+            }
+            Shapes::ConstantMedium(object) => {
+                object.hit(ray, interval)
             }
         }
     }
