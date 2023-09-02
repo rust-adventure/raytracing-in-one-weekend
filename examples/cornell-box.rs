@@ -2,7 +2,7 @@ use glam::DVec3;
 use raytracer::{
     camera::Camera,
     material::Material,
-    shapes::{quad::Quad, sphere::Sphere},
+    shapes::{quad::Quad, quad_box::QuadBox, Shapes},
     textures::Texture,
 };
 use std::{io, path::Path};
@@ -24,42 +24,53 @@ fn main() -> io::Result<()> {
         DVec3::new(15., 15., 15.).into(),
     );
 
-    world.push(Quad::new(
+    world.push(Shapes::Quad(Quad::new(
         DVec3::new(555., 0., 0.),
         DVec3::new(0., 555., 0.),
         DVec3::new(0., 0., 555.),
         green,
-    ));
-    world.push(Quad::new(
+    )));
+    world.push(Shapes::Quad(Quad::new(
         DVec3::new(0., 0., 0.),
         DVec3::new(0., 555., 0.),
         DVec3::new(0., 0., 555.),
         red,
-    ));
-    world.push(Quad::new(
+    )));
+    world.push(Shapes::Quad(Quad::new(
         DVec3::new(343., 554., 332.),
         DVec3::new(-130., 0., 0.),
         DVec3::new(0., 0., -105.),
         light,
-    ));
-    world.push(Quad::new(
+    )));
+    world.push(Shapes::Quad(Quad::new(
         DVec3::new(0., 0., 0.),
         DVec3::new(555., 0., 0.),
         DVec3::new(0., 0., 555.),
         white.clone(),
-    ));
-    world.push(Quad::new(
+    )));
+    world.push(Shapes::Quad(Quad::new(
         DVec3::new(555., 555., 555.),
         DVec3::new(-555., 0., 0.),
         DVec3::new(0., 0., -555.),
         white.clone(),
-    ));
-    world.push(Quad::new(
+    )));
+    world.push(Shapes::Quad(Quad::new(
         DVec3::new(0., 0., 555.),
         DVec3::new(555., 0., 0.),
         DVec3::new(0., 555., 0.),
+        white.clone(),
+    )));
+
+    world.push(Shapes::QuadBox(QuadBox::new(
+        DVec3::new(130., 0., 65.),
+        DVec3::new(295., 165., 230.),
+        white.clone(),
+    )));
+    world.push(Shapes::QuadBox(QuadBox::new(
+        DVec3::new(265., 0., 295.),
+        DVec3::new(430., 330., 460.),
         white,
-    ));
+    )));
 
     let camera = Camera::init()
         .image_width(800)

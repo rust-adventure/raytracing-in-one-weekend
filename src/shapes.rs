@@ -1,6 +1,7 @@
 use crate::hittable::Hittable;
 
 pub mod quad;
+pub mod quad_box;
 pub mod sphere;
 // are other shapes useful?
 // possible SDF definitions?
@@ -11,6 +12,7 @@ pub mod sphere;
 pub enum Shapes {
     Sphere(sphere::Sphere),
     Quad(quad::Quad),
+    QuadBox(quad_box::QuadBox),
     // RoundedBox(rounded_box::RoundedBox),
     // Box(a_box::Box),
     // Cylinder(cylinder::Cylinder),
@@ -27,6 +29,9 @@ impl Hittable for Shapes {
                 object.hit(ray, interval)
             }
             Shapes::Quad(object) => {
+                object.hit(ray, interval)
+            }
+            Shapes::QuadBox(object) => {
                 object.hit(ray, interval)
             } // Shapes::RoundedBox(object) => {
               //     object.hit(ray, interval)
