@@ -61,16 +61,28 @@ fn main() -> io::Result<()> {
         white.clone(),
     )));
 
-    world.push(Shapes::QuadBox(QuadBox::new(
-        DVec3::new(130., 0., 65.),
-        DVec3::new(295., 165., 230.),
-        white.clone(),
-    )));
-    world.push(Shapes::QuadBox(QuadBox::new(
-        DVec3::new(265., 0., 295.),
-        DVec3::new(430., 330., 460.),
-        white,
-    )));
+    world.push(Shapes::Translate {
+        offset: DVec3::new(265., 0., 295.),
+        object: Box::new(Shapes::new_rotate_y(
+            15.,
+            Shapes::QuadBox(QuadBox::new(
+                DVec3::new(0., 0., 0.),
+                DVec3::new(165., 330., 165.),
+                white.clone(),
+            )),
+        )),
+    });
+    world.push(Shapes::Translate {
+        offset: DVec3::new(130., 0., 65.),
+        object: Box::new(Shapes::new_rotate_y(
+            -18.,
+            Shapes::QuadBox(QuadBox::new(
+                DVec3::new(0., 0., 0.),
+                DVec3::new(165., 165., 165.),
+                white,
+            )),
+        )),
+    });
 
     let camera = Camera::init()
         .image_width(800)
