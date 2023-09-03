@@ -26,6 +26,7 @@ pub enum Shapes {
         object: Box<Shapes>,
     },
     ConstantMedium(constant_medium::ConstantMedium),
+    Collection(Vec<Shapes>),
     // RoundedBox(rounded_box::RoundedBox),
     // Box(a_box::Box),
     // Cylinder(cylinder::Cylinder),
@@ -131,6 +132,9 @@ impl Hittable for Shapes {
                 Some(hit_record)
             }
             Shapes::ConstantMedium(object) => {
+                object.hit(ray, interval)
+            }
+            Shapes::Collection(object) => {
                 object.hit(ray, interval)
             }
         }
