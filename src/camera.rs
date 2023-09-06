@@ -163,7 +163,9 @@ impl Camera {
                 ) * 256.;
                 format!(
                     "{} {} {}",
-                    color.x, color.y, color.z
+                    color.x as u8,
+                    color.y as u8,
+                    color.z as u8
                 )
             })
             .collect::<Vec<String>>()
