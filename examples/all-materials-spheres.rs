@@ -5,7 +5,14 @@ use raytracer::{
 };
 use std::io;
 
+#[cfg(feature = "dhat-heap")]
+#[global_allocator]
+static ALLOC: dhat::Alloc = dhat::Alloc;
+
 fn main() -> io::Result<()> {
+    #[cfg(feature = "dhat-heap")]
+    let _profiler = dhat::Profiler::new_heap();
+
     let mut world = vec![];
 
     let material_ground = Material::Lambertian {
