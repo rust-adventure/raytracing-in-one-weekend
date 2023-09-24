@@ -11,18 +11,18 @@ pub trait Hittable {
 }
 
 #[derive(Clone)]
-pub struct HitRecord {
+pub struct HitRecord<'a> {
     pub point: DVec3,
     pub normal: DVec3,
     pub t: f64,
     pub front_face: bool,
-    pub material: Material,
+    pub material: &'a Material,
     pub u: f64,
     pub v: f64,
 }
-impl HitRecord {
+impl<'a> HitRecord<'a> {
     pub fn with_face_normal(
-        material: Material,
+        material: &'a Material,
         point: DVec3,
         outward_normal: DVec3,
         t: f64,

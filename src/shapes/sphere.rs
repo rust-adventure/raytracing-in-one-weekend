@@ -115,7 +115,7 @@ impl Hittable for Sphere {
         let (u, v) = self.get_sphere_uv(outward_normal);
 
         let rec = HitRecord::with_face_normal(
-            self.material.clone(),
+            &self.material,
             point,
             outward_normal,
             t,

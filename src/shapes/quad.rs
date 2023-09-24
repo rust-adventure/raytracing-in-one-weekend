@@ -94,7 +94,7 @@ impl Hittable for Quad {
         // return true;
 
         let rec = HitRecord::with_face_normal(
-            self.material.clone(),
+            &self.material,
             intersection,
             self.normal,
             t,

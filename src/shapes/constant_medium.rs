@@ -86,7 +86,7 @@ impl Hittable for ConstantMedium {
             normal: DVec3::new(1., 0., 0.), // arbitrary
             t,
             front_face: true, // also arbitrary
-            material: self.phase_function.clone(),
+            material: &self.phase_function,
             // Arbitrary u/v?
             u: 0.,
             v: 0.,
