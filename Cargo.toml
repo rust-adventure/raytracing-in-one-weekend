@@ -8,6 +8,7 @@ name = "raytracer"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+dhat = "0.3.2"
 glam = { version = "0.24.1", features = ["rand"] }
 image = "0.24.7"
 indicatif = { version = "0.17.6", features = ["rayon"] }
@@ -15,3 +16,9 @@ itertools = "0.11.0"
 noise = "0.8.2"
 rand = "0.8.5"
 rayon = "1.7.0"
+
+[profile.release]
+debug = 1
+
+[features]
+dhat-heap = []
